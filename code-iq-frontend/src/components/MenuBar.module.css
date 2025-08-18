@@ -1,0 +1,246 @@
+/* MenuBar Styles */
+.menuBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(15, 20, 25, 0.95);
+  /* backdrop-filter: blur(20px); */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    sans-serif;
+}
+
+.menuContainer {
+
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+}
+
+/* Brand/Logo */
+.menuBrand {
+  display: flex;
+  align-items: center;
+}
+
+.brandLink {
+  text-decoration: none;
+}
+
+.brandTitle {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0;
+  background: linear-gradient(135deg, #64ffda 0%, #7c4dff 50%, #ff4081 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.02em;
+}
+
+/* Navigation */
+.menuNav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: 2rem;
+}
+
+.navLink {
+  color: #a0aec0;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.navLink:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* User Section */
+.menuUser {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* User Profile */
+.userProfileContainer {
+  position: relative;
+}
+
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(45, 55, 72, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.userProfile:hover {
+  background: rgba(45, 55, 72, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.userAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(100, 255, 218, 0.3);
+  transition: border-color 0.3s ease;
+}
+
+.userProfile:hover .userAvatar {
+  border-color: rgba(100, 255, 218, 0.6);
+}
+
+.userUsername {
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.dropdownArrow {
+  width: 16px;
+  height: 16px;
+  color: #a0aec0;
+  transition: transform 0.3s ease;
+}
+
+.userProfile:hover .dropdownArrow {
+  color: #ffffff;
+}
+
+/* User Dropdown */
+.userDropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: rgba(26, 31, 41, 0.95);
+  /* backdrop-filter: blur(20px); */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  min-width: 150px;
+  z-index: 1001;
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  color: #a0aec0;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.logoutButton:hover {
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+}
+
+.logoutIcon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Sign In Button */
+.signinButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  font-family: inherit;
+}
+
+.signinButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+}
+
+.signinButton:active {
+  transform: translateY(0);
+}
+
+.githubIcon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .menuContainer {
+    padding: 0.75rem 1rem;
+  }
+
+  .brandTitle {
+    font-size: 1.25rem;
+  }
+
+  .signinButton {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.8rem;
+  }
+
+  .userUsername {
+    display: none;
+  }
+
+  .userProfile {
+    padding: 0.5rem;
+  }
+
+  .navLink {
+    display: none;
+  }
+
+  .userDropdown {
+    right: -0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .menuContainer {
+    padding: 0.5rem 1rem;
+  }
+
+  .signinButton {
+    padding: 0.5rem 1rem;
+  }
+
+  .signinButton span {
+    display: none;
+  }
+}
