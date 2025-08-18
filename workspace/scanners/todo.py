@@ -11,14 +11,17 @@ class Todos(BaseScanner):
     def __init__(self, max_workers=None, exclude_patterns=None):
         super().__init__(max_workers, exclude_patterns)
 
-    def scan_single_file(self, file_path: Path) -> Dict[str, Any]:
+    def scan_single_file(self, file_path: Path, file_url: str = None) -> Dict[str, Any]:
         """Scan a single file for TODOs"""
         # Add custom logic for scanning TODOs here
-        result = self._find_todos(file_path)
+        temp_path = self.make_temp_file(file_url)
+        result = self._find_todos(file_path, Path(temp_path))
+        self.delete_temp_file(temp_path)
         return result
 
-    def _find_todos(self, file_path: Path) -> Dict[str, Any]:
+    def _find_todos(self, file_path: Path, temp_path: Path) -> Dict[str, Any]:
         """Find TODO comments in a file"""
+        # print(file_path)
         result = {
             str(file_path): {
                 'raw': "",
@@ -27,7 +30,7 @@ class Todos(BaseScanner):
             }
         }
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(temp_path, 'r', encoding='utf-8') as f:
                 content = f.read()
                 patterns = [
                     r'#.*?TODO.*',      # Python: # TODO: fix this

@@ -21,12 +21,13 @@ load_dotenv()
 class ScanOrchestrator:
     """Orchestrates multiple scanners for comprehensive code health analysis"""
 
-    def __init__(self, scan_id: str, max_concurrent_scanners: int = 3):
+    def __init__(self, scan_id: str, snapshot_id: str, max_concurrent_scanners: int = 3):
         self.scanners = {}
         self.scanner_types = defaultdict(list)
         self.max_concurrent_scanners = max_concurrent_scanners
         self.results = {}
         self.scan_id = scan_id
+        self.snapshot_id = snapshot_id
         self.supabase = create_client(os.getenv("DB_URL"), os.getenv("DB_KEY"))
 
         self.db_mutex = threading.Lock()
@@ -44,19 +45,19 @@ class ScanOrchestrator:
 
         try:
             # Acquire mutex for database state update
-            with self.db_mutex:
-                states = self.supabase.table('active_scans').select({"states"}).eq("id", self.scan_id).single().execute().data.get("states", {})
+            # with self.db_mutex:
+            #     states = self.supabase.table('active_scans').select({"states"}).eq("id", self.scan_id).single().execute().data.get("states", {})
 
-                waiting = states.get("waiting", [])
-                in_progress = states.get("inProgress", [])
+            #     waiting = states.get("waiting", [])
+            #     in_progress = states.get("inProgress", [])
 
-                if name in waiting:
-                    waiting.remove(name)
-                in_progress.append(name)
+            #     if name in waiting:
+            #         waiting.remove(name)
+            #     in_progress.append(name)
 
-                self.supabase.table('active_scans').update({
-                    "states": states
-                }).eq("id", self.scan_id).execute()
+            #     self.supabase.table('active_scans').update({
+            #         "states": states
+            #     }).eq("id", self.scan_id).execute()
             
             # Send HTTP notification (outside mutex)
             try:
@@ -74,19 +75,19 @@ class ScanOrchestrator:
             print(f"✓ {name} completed")
             
             # Acquire mutex again for completion state update
-            with self.db_mutex:
-                states = self.supabase.table('active_scans').select({"states"}).eq("id", self.scan_id).single().execute().data.get("states", {})
+            # with self.db_mutex:
+            #     states = self.supabase.table('active_scans').select({"states"}).eq("id", self.scan_id).single().execute().data.get("states", {})
 
-                completed = states.get("completed", [])
-                in_progress = states.get("inProgress", [])
+            #     completed = states.get("completed", [])
+            #     in_progress = states.get("inProgress", [])
 
-                if name in in_progress:
-                    in_progress.remove(name)
-                completed.append(name)
+            #     if name in in_progress:
+            #         in_progress.remove(name)
+            #     completed.append(name)
                 
-                self.supabase.table('active_scans').update({
-                    "states": states
-                }).eq("id", self.scan_id).execute()
+            #     self.supabase.table('active_scans').update({
+            #         "states": states
+            #     }).eq("id", self.scan_id).execute()
 
             # Send HTTP notification (outside mutex)
             try:
@@ -103,20 +104,20 @@ class ScanOrchestrator:
         except Exception as e:
             print(f"✗ {name} failed: {e}")
             # Ensure failed scanner is removed from in_progress
-            try:
-                with self.db_mutex:
-                    states = self.supabase.table('active_scans').select({"states"}).eq("id", self.scan_id).single().execute().data.get("states", {})
-                    in_progress = states.get("inProgress", [])
-                    failed = states.get("failed", [])
-                    if name in in_progress:
-                        in_progress.remove(name)
-                    failed.append(name)
+            # try:
+            #     with self.db_mutex:
+            #         states = self.supabase.table('active_scans').select({"states"}).eq("id", self.scan_id).single().execute().data.get("states", {})
+            #         in_progress = states.get("inProgress", [])
+            #         failed = states.get("failed", [])
+            #         if name in in_progress:
+            #             in_progress.remove(name)
+            #         failed.append(name)
 
-                    self.supabase.table('active_scans').update({
-                        "states": states
-                    }).eq("id", self.scan_id).execute()
-            except Exception as cleanup_error:
-                print(f"Warning: Failed to cleanup {name} from in_progress: {cleanup_error}")
+            #         self.supabase.table('active_scans').update({
+            #             "states": states
+            #         }).eq("id", self.scan_id).execute()
+            # except Exception as cleanup_error:
+            #     print(f"Warning: Failed to cleanup {name} from in_progress: {cleanup_error}")
 
             # Send HTTP notification (outside mutex)
             try:
@@ -394,9 +395,10 @@ class ScanOrchestrator:
 def main():
     parser = argparse.ArgumentParser(description="Codebase Scanner")
     parser.add_argument("--scan_id", help="ID of the scanner to use")
+    parser.add_argument("--snapshot_id", help="ID of the snapshot to scan")
     args = parser.parse_args()
     # Create orchestrator
-    orchestrator = ScanOrchestrator(max_concurrent_scanners=2, scan_id=args.scan_id)
+    orchestrator = ScanOrchestrator(max_concurrent_scanners=2, scan_id=args.scan_id, snapshot_id=args.snapshot_id)
 
 
     # Register scanners
@@ -409,15 +411,14 @@ def main():
     # orchestrator.register_scanner(SecurityScanner())
 
     # Run comprehensive scan
-    scan_path = '/Users/laplacesallisiv/LaPlaceSallis/PROJECTS/code-iq/workspace/temp'
+    scan_path = f'{args.scan_id}_{args.snapshot_id}'
     results = orchestrator.scan_codebase(scan_path)
     # results = orchestrator.scan_codebase('.')
 
     if results and results['scanner_results']:
         # Extract scan path from results metadata for relative path conversion
         scan_path_from_results = results['scan_metadata']['path_scanned']
-        raw_scores = orchestrator.generate_scores(results['scanner_results'], scan_path_from_results)
-        # print(raw_scores)
+        # raw_scores = orchestrator.generate_scores(results['scanner_results'], scan_path_from_results)
 
 if __name__ == "__main__":
     main()

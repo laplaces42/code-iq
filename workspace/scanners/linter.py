@@ -56,28 +56,30 @@ class Linter(BaseScanner):
 
         return result
 
-    def scan_batch(self, file_paths: List[Path], batch_size: int = 500) -> Dict[str, Any]:
+    def scan_batch(self, file_paths: Dict[Path, str], batch_size: int = 500) -> Dict[str, Any]:
         if not file_paths:
             return {}
         
         results = {}
         for i in range(0, len(file_paths), batch_size):
-            batch = file_paths[i:i + batch_size]
+            batch_items = list(file_paths.items())[i:i + batch_size]
 
             groups = defaultdict(list)
-            for path in batch:
-                groups[path.suffix].append(path)
+            for path, url in batch_items:
+                groups[path.suffix].append((path, url))
 
             for suffix, paths in groups.items():
                 cmd_base = self.COMMANDS.get(suffix)
                 if not cmd_base:
                     continue
-                cmd = [*cmd_base, *map(str, paths)]
+
+                temp_files = {self.make_temp_file(p[1], suffix=suffix): str(p[0]) for p in paths}
+                cmd = [*cmd_base, *temp_files]
                 try:
                     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
                 except subprocess.TimeoutExpired:
-                    for path in paths:
-                        results[str(path)] = {
+                    for p in paths:
+                        results[str(p[0])] = {
                             'raw': "",
                             'errors': ['Linting timeout (60s)'],
                             'score': 0
@@ -87,7 +89,7 @@ class Linter(BaseScanner):
                 if proc.returncode not in (0, 1):
                     err = proc.stderr.strip() or "flake8 crash"
                     for p in paths:
-                        results[str(p)] = {"raw":"", "errors":[err], "score":0}
+                        results[str(p[0])] = {"raw":"", "errors":[err], "score":0}
                     continue
             
                 per_file = defaultdict(list)
@@ -95,17 +97,20 @@ class Linter(BaseScanner):
                     if not line: 
                         continue
                     path_part = line.split(':', 1)[0]
-                    per_file[path_part].append(line)
+                    per_file[temp_files[path_part]].append(line)
 
-                for path in paths:
-                    lst  = per_file.get(str(path), [])
+                for p in paths:
+                    lst  = per_file.get(str(p[0]), [])
                     raw  = "\n".join(lst)
                     issues = len(lst)
-                    results[str(path)] = {
+                    results[str(p[0])] = {
                         "raw": raw,
                         "errors": [],
                         "score": 100 - issues
                     }
 
+
+                for temp in temp_files:
+                    self.delete_temp_file(temp)
 
         return results

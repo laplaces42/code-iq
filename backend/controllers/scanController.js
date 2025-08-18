@@ -39,26 +39,11 @@ function getSupabaseClient() {
 async function startScan(req, res) {
   const workspaceDir = path.join(process.env.WORKSPACE_DIR, "temp");
   try {
-    const { snapshotId } = req.body;
+    const { scanId, snapshotId } = req.body;
     const supabase = getSupabaseClient();
-    // Use the virtualenv Python interpreter directly
-    const { data: scanData, error: scanError } = await supabase
-      .from("active_scans")
-      .insert({
-        status: "initializing",
-        repoSnapshotId: snapshotId,
-      })
-      .select();
 
-    if (scanError) {
-      throw new ScanError(
-        "Failed to insert scan record",
-        500,
-        "SCAN_RECORD_ERROR"
-      );
-    }
     const scanProcess = spawn(
-      `source ${process.env.VENV_FILE} && python3 ${process.env.SCANNER_FILE} --scan_id=${scanData[0].id}`,
+      `source ${process.env.VENV_FILE} && python3 ${process.env.SCANNER_FILE} --scan_id=${scanId} --snapshot_id=${snapshotId}`,
       [],
       {
         shell: true,

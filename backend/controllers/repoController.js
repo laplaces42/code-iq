@@ -30,6 +30,37 @@ function handleError(error, res) {
   });
 }
 
+async function populateSupabaseStorage(folderName, treeData, accessToken) {
+  const supabase = getSupabaseClient();
+  treeData.map(async (entry) => {
+    if (entry.type === "blob") {
+      const blobUrl = entry.url;
+      const path = entry.path;
+      const blobResponse = await fetch(blobUrl, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (blobResponse.ok) {
+        const blobData = await blobResponse.json();
+        const content = Buffer.from(blobData.content, "base64").toString(
+          "utf-8"
+        );
+        const { data: fileData, error: fileError } = await supabase.storage
+          .from("temp_scans")
+          .upload(`${folderName}/${path}`, content);
+
+        if (fileError) {
+          throw new RepoError("Failed to upload file", 500, "UPLOAD_ERROR");
+        }
+
+        return fileData;
+      }
+    }
+  });
+}
+
 let supabase;
 function getSupabaseClient() {
   if (!supabase) {
@@ -288,7 +319,8 @@ async function cloneRepo(req, res) {
     const { data: repoData, error: repoError } = await supabase
       .from("repo_snapshots")
       .insert({ githubId: repoId, userId: userId })
-      .select();
+      .select()
+      .single();
 
     if (repoError) {
       throw new RepoError(
@@ -298,38 +330,100 @@ async function cloneRepo(req, res) {
       );
     }
 
-    // Clean and create workspace
-    try {
-      await fs.rm(workspaceDir, { recursive: true, force: true });
-    } catch (err) {
-      if (err.code !== "ENOENT") throw err;
+    const accessToken = await getAuthorization(req, res);
+
+    const repoResponse = await fetch(
+      `https://api.github.com/repositories/${repoId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (repoResponse.ok) {
+      const repoInfo = await repoResponse.json();
+
+      const commitsUrl = repoInfo.commits_url.replace("{/sha}", "");
+      const treesUrl = repoInfo.trees_url.replace("{/sha}", "");
+
+      const commitsResponse = await fetch(commitsUrl, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (commitsResponse.ok) {
+        const commitsData = await commitsResponse.json();
+        const sha = commitsData[0].sha;
+        const treesResponse = await fetch(`${treesUrl}/${sha}?recursive=1`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (treesResponse.ok) {
+          const treesData = await treesResponse.json();
+          const { data: scanData, error: scanError } = await supabase
+            .from("active_scans")
+            .insert({
+              status: "initializing",
+              repoSnapshotId: repoData.id,
+            })
+            .select()
+            .single();
+
+          if (scanError) {
+            throw new RepoError(
+              "Failed to insert scan record",
+              500,
+              "SCAN_RECORD_ERROR"
+            );
+          }
+
+          const folderName = `${scanData.id}_${repoData.id}`;
+          await populateSupabaseStorage(
+            folderName,
+            treesData.tree,
+            accessToken
+          );
+          return res
+            .status(200)
+            .json({ scanId: scanData.id, snapshotId: repoData.id });
+        }
+      }
     }
 
-    await fs.mkdir(path.dirname(workspaceDir), { recursive: true });
+    // Clean and create workspace
+    // try {
+    //   await fs.rm(workspaceDir, { recursive: true, force: true });
+    // } catch (err) {
+    //   if (err.code !== "ENOENT") throw err;
+    // }
 
-    // Use Promise wrapper for exec
-    await new Promise((resolve, reject) => {
-      exec(`git clone ${repoUrl} ${workspaceDir}`, (error, stdout, stderr) => {
-        if (error) {
-          reject(
-            new RepoError("Failed to clone repository", 500, "REPO_CLONE_ERROR")
-          );
-        } else {
-          resolve(stdout);
-        }
-      });
-    });
+    // await fs.mkdir(path.dirname(workspaceDir), { recursive: true });
 
-    return res.status(200).json({ snapshotId: repoData[0].id });
+    // // Use Promise wrapper for exec
+    // await new Promise((resolve, reject) => {
+    //   exec(`git clone ${repoUrl} ${workspaceDir}`, (error, stdout, stderr) => {
+    //     if (error) {
+    //       reject(
+    //         new RepoError("Failed to clone repository", 500, "REPO_CLONE_ERROR")
+    //       );
+    //     } else {
+    //       resolve(stdout);
+    //     }
+    //   });
+    // });
+    return res.status(500).json({ error: "Failed to clone repository" });
   } catch (error) {
     // Cleanup on error
-    try {
-      const workspaceDir = path.join(process.env.WORKSPACE_DIR, "temp");
-      await fs.rm(workspaceDir, { recursive: true, force: true });
-    } catch (cleanupError) {
-      // would put logging logic here
-      console.error("Cleanup failed:", cleanupError);
-    }
+    // try {
+    //   const workspaceDir = path.join(process.env.WORKSPACE_DIR, "temp");
+    //   await fs.rm(workspaceDir, { recursive: true, force: true });
+    // } catch (cleanupError) {
+    //   // would put logging logic here
+    //   console.error("Cleanup failed:", cleanupError);
+    // }
     return handleError(error, res);
   }
 }
