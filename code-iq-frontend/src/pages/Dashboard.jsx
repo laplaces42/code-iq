@@ -288,7 +288,7 @@ function Dashboard() {
 
   useEffect(() => {
     fetchRepos();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useEffect(() => {
@@ -346,10 +346,14 @@ function Dashboard() {
             </div>
             <div className={styles.statCard}>
               <span className={styles.statValue}>
-                {(
-                  repoList.reduce((acc, repo) => acc + repo.scores.overall, 0) /
-                  repoList.length
-                ).toFixed(1)}
+                {repoList.length > 0 &&
+                  (
+                    repoList.reduce(
+                      (acc, repo) => acc + repo.scores.overall,
+                      0
+                    ) / repoList.length
+                  ).toFixed(1)}
+                {repoList.length === 0 && "--"}
               </span>
               <span className={styles.statLabel}>Avg Score</span>
             </div>
