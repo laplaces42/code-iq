@@ -172,8 +172,8 @@ function Dashboard() {
           }
         );
         if (response.ok) {
-          const data = await response.json();
-          await scanFullRepo(data.snapshotId);
+          // const data = await response.json();
+          // await scanFullRepo(data.snapshotId);
           toast.success(
             `Repository "${repository.name}" connected successfully!`
           );

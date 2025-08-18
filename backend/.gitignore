@@ -34,3 +34,42 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+
+# Python (for scanners)
+scanners/__pycache__/
+scanners/*.py[cod]
+scanners/*$py.class
+scanners/*.so
+scanners/.Python
+scanners/build/
+scanners/develop-eggs/
+scanners/dist/
+scanners/downloads/
+scanners/eggs/
+scanners/.eggs/
+scanners/lib/
+scanners/lib64/
+scanners/parts/
+scanners/sdist/
+scanners/var/
+scanners/wheels/
+scanners/*.egg-info/
+scanners/.installed.cfg
+scanners/*.egg
+
+# Virtual environments (for scanners)
+scanners/.env
+scanners/.venv/
+scanners/env/
+scanners/venv/
+scanners/ENV/
+scanners/env.bak/
+scanners/venv.bak/
+
+# Scanner output directories
+scanners/out/
+scanners/output/
+scanners/results/
+scanners/cloned_repos/
+scanners/scan_results/
+scanners/temp_workspace/

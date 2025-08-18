@@ -14,7 +14,6 @@ const requiredEnvVars = [
   "JWT_SIGNING_KEY",
   "CLIENT_ID",
   "CLIENT_SECRET",
-  "WORKSPACE_DIR",
 ];
 
 for (const varName of requiredEnvVars) {

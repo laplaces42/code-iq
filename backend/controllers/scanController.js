@@ -37,45 +37,7 @@ function getSupabaseClient() {
 }
 
 async function startScan(req, res) {
-  const workspaceDir = path.join(process.env.WORKSPACE_DIR, "temp");
   try {
-    const { snapshotId } = req.body;
-    const supabase = getSupabaseClient();
-    // Use the virtualenv Python interpreter directly
-    const { data: scanData, error: scanError } = await supabase
-      .from("active_scans")
-      .insert({
-        status: "initializing",
-        repoSnapshotId: snapshotId,
-      })
-      .select();
-
-    if (scanError) {
-      throw new ScanError(
-        "Failed to insert scan record",
-        500,
-        "SCAN_RECORD_ERROR"
-      );
-    }
-    const scanProcess = spawn(
-      `source ${process.env.VENV_FILE} && python3 ${process.env.SCANNER_FILE} --scan_id=${scanData[0].id}`,
-      [],
-      {
-        shell: true,
-        detached: true, // This detaches the process from the parent
-        stdio: "ignore", // Ignore stdio to fully detach
-      }
-    );
-
-    scanProcess.on("error", async (error) => {
-      await supabase
-        .from("active_scans")
-        .update({ status: "failed", error: error.message })
-        .eq("id", scanData[0].id);
-    });
-
-    // Unreference the process so the parent can exit without waiting
-    scanProcess.unref();
 
     return res.status(202).json({ status: "scan started successfully" });
   } catch (error) {
@@ -127,16 +89,8 @@ async function individualScannerFailed(req, res) {
 }
 
 async function scanComplete(req, res) {
+  const { scan_id } = req.body;
   try {
-    // Scan completed - cleanup temp directory
-    const workspaceDir = path.join(process.env.WORKSPACE_DIR, "temp");
-    try {
-      await fs.rm(workspaceDir, { recursive: true, force: true });
-    } catch (err) {
-      // Ignore error if directory doesn't exist
-      if (err.code !== "ENOENT") throw err;
-    }
-
     return res
       .status(200)
       .json({ status: "Scan completed notification received" });

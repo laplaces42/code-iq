@@ -28,7 +28,6 @@ class ScanOrchestrator:
         self.results = {}
         self.scan_id = scan_id
         self.supabase = create_client(os.getenv("DB_URL"), os.getenv("DB_KEY"))
-
         self.db_mutex = threading.Lock()
 
     def register_scanner(self, scanner: BaseScanner, scanner_type: str):
@@ -394,6 +393,7 @@ class ScanOrchestrator:
 def main():
     parser = argparse.ArgumentParser(description="Codebase Scanner")
     parser.add_argument("--scan_id", help="ID of the scanner to use")
+    parser.add_argument("--scan_path", help="Path of the codebase to scan")
     args = parser.parse_args()
     # Create orchestrator
     orchestrator = ScanOrchestrator(max_concurrent_scanners=2, scan_id=args.scan_id)
@@ -409,8 +409,7 @@ def main():
     # orchestrator.register_scanner(SecurityScanner())
 
     # Run comprehensive scan
-    scan_path = '/Users/laplacesallisiv/LaPlaceSallis/PROJECTS/code-iq/workspace/temp'
-    results = orchestrator.scan_codebase(scan_path)
+    results = orchestrator.scan_codebase(args.scan_path)
     # results = orchestrator.scan_codebase('.')
 
     if results and results['scanner_results']:

@@ -5,6 +5,7 @@ import fs from "fs/promises";
 import path from "path";
 import { exec, spawn } from "child_process";
 import authController from "./authController.js";
+import tmp from "tmp";
 
 class RepoError extends Error {
   constructor(message, statusCode = 500, code = "REPO_ERROR") {
@@ -16,6 +17,7 @@ class RepoError extends Error {
 }
 
 function handleError(error, res) {
+  console.error(error);
   if (error instanceof RepoError) {
     return res.status(error.statusCode).json({
       error: error.message,
@@ -278,17 +280,19 @@ async function fetchNewRepos(req, res) {
 }
 
 async function cloneRepo(req, res) {
+  const { repoName, repoId, userId } = req.body;
+  let tempDir = null;
+
   try {
-    const { repoName, repoId, userId } = req.body;
-    const repoUrl = `https://github.com/${repoName}.git`;
     const supabase = getSupabaseClient();
-    const workspaceDir = path.join(process.env.WORKSPACE_DIR, "temp");
+    const accessToken = await getAuthorization(req, res);
 
     // Insert repo snapshot first
     const { data: repoData, error: repoError } = await supabase
       .from("repo_snapshots")
       .insert({ githubId: repoId, userId: userId })
-      .select();
+      .select()
+      .single();
 
     if (repoError) {
       throw new RepoError(
@@ -298,18 +302,34 @@ async function cloneRepo(req, res) {
       );
     }
 
-    // Clean and create workspace
-    try {
-      await fs.rm(workspaceDir, { recursive: true, force: true });
-    } catch (err) {
-      if (err.code !== "ENOENT") throw err;
+    const { data: scanData, error: scanError } = await supabase
+      .from("active_scans")
+      .insert({
+        status: "initializing",
+        repoSnapshotId: repoData.id,
+      })
+      .select()
+      .single();
+
+    if (scanError) {
+      throw new RepoError(
+        "Failed to insert scan record",
+        500,
+        "SCAN_RECORD_ERROR"
+      );
     }
 
-    await fs.mkdir(path.dirname(workspaceDir), { recursive: true });
+    tempDir = tmp.dirSync({
+      prefix: `scan_${scanData.id}_`,
+      unsafeCleanup: true,
+    });
+
+    // Build authenticated clone URL for private repos
+    const repoUrl = `https://${accessToken}@github.com/${repoName}.git`; 
 
     // Use Promise wrapper for exec
     await new Promise((resolve, reject) => {
-      exec(`git clone ${repoUrl} ${workspaceDir}`, (error, stdout, stderr) => {
+      exec(`git clone ${repoUrl} ${tempDir.name}`, (error, stdout, stderr) => {
         if (error) {
           reject(
             new RepoError("Failed to clone repository", 500, "REPO_CLONE_ERROR")
@@ -320,15 +340,60 @@ async function cloneRepo(req, res) {
       });
     });
 
-    return res.status(200).json({ snapshotId: repoData[0].id });
-  } catch (error) {
-    // Cleanup on error
+    // Use relative paths from the backend directory
+    const backendDir = process.cwd();
+    const scannersDir = path.join(backendDir, "scanners");
+    const venvPath = path.join(scannersDir, ".venv", "bin", "activate");
+    const orchestratorPath = path.join(scannersDir, "orchestrator.py");
+
+    // Check if virtual environment exists, if not use system python
+    let pythonCommand;
     try {
-      const workspaceDir = path.join(process.env.WORKSPACE_DIR, "temp");
-      await fs.rm(workspaceDir, { recursive: true, force: true });
-    } catch (cleanupError) {
-      // would put logging logic here
-      console.error("Cleanup failed:", cleanupError);
+      await fs.access(venvPath);
+      pythonCommand = `source ${venvPath} && python3 ${orchestratorPath}`;
+    } catch {
+      // Fallback to system python if venv doesn't exist
+      pythonCommand = `python3 ${orchestratorPath}`;
+    }
+
+    const scanProcess = spawn(
+      `${pythonCommand} --scan_id=${scanData.id} --scan_path=${tempDir.name}`,
+      [],
+      {
+        shell: true,
+        detached: true, // This detaches the process from the parent
+        stdio: "ignore", // Ignore stdio to fully detach
+      }
+    );
+
+    scanProcess.on("error", async (error) => {
+      await supabase
+        .from("active_scans")
+        .update({ status: "failed", error: error.message })
+        .eq("id", scanData.id);
+
+      // Clean up temp directory on scanner error
+      if (tempDir) {
+        tempDir.removeCallback();
+      }
+    });
+
+    // Set up cleanup when scanner completes (you may want to handle this in your Python scanner)
+    scanProcess.on("exit", (code) => {
+      // Clean up temp directory after scanner completes
+      if (tempDir) {
+        tempDir.removeCallback();
+      }
+    });
+
+    // Unreference the process so the parent can exit without waiting
+    scanProcess.unref();
+
+    return res.status(200).json({ snapshotId: repoData.id });
+  } catch (error) {
+    // Clean up temp directory on any error during setup
+    if (tempDir) {
+      tempDir.removeCallback();
     }
     return handleError(error, res);
   }
