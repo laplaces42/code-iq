@@ -70,8 +70,8 @@ async function setCookies(req, res, user, supabase) {
 
     res.cookie("refresh", refreshPlain, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      secure: process.env.NODE_ENV === "production", // Always true for production cross-origin
+      sameSite: "None", // Required for cross-origin cookies
       maxAge: SESSION_EXPIRATION_DAYS * 24 * 60 * 60 * 1000, // 90 days
     });
 
@@ -88,8 +88,8 @@ async function setCookies(req, res, user, supabase) {
 
     res.cookie("jwt", jwt.compact(), {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      secure: process.env.NODE_ENV === "production", // Always true for production cross-origin
+      sameSite: "None", // Required for cross-origin cookies
       maxAge: JWT_EXPIRATION_HOURS * 60 * 60 * 1000, // 1 hour
     });
   } catch (error) {
@@ -322,8 +322,8 @@ async function refreshAccessToken(req, res) {
 
     res.cookie("jwt", newAccessToken.compact(), {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      secure: process.env.NODE_ENV === "production", // Always true for production cross-origin
+      sameSite: "None", // Required for cross-origin cookies
       maxAge: JWT_EXPIRATION_HOURS * 60 * 60 * 1000, // 1 hour
     });
 
@@ -478,8 +478,16 @@ async function logout(req, res) {
       // would put logging logic here
       console.error("Error deleting session:", deleteError);
     }
-    res.clearCookie("jwt");
-    res.clearCookie("refresh");
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "None",
+    });
+    res.clearCookie("refresh", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "None",
+    });
     return res.status(200).json({});
   } catch (error) {
     // Handle errors using the custom error handler
