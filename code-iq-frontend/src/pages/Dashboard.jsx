@@ -110,7 +110,7 @@ function Dashboard() {
       setLoadingInstallation(true);
       try {
         await openWindowAndWait(
-          `https://github.com/apps/code-iq-test-app/installations/new`,
+          `${process.env.REACT_APP_APP_URL}/installations/new`,
           "github-install",
           "width=600,height=700,scrollbars=yes,resizable=yes"
         );
