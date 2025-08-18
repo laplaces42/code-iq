@@ -51,6 +51,7 @@ function Dashboard() {
         `${process.env.REACT_APP_BACKEND_URL}/repos/check-installation`,
         {
           method: "GET",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -75,6 +76,7 @@ function Dashboard() {
         `${process.env.REACT_APP_BACKEND_URL}/repos/fetch-new-repos`,
         {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -141,6 +143,7 @@ function Dashboard() {
     // TODO: Implement repository scanning logic
     await fetch(`${process.env.REACT_APP_BACKEND_URL}/scan/start`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -157,6 +160,7 @@ function Dashboard() {
           `${process.env.REACT_APP_BACKEND_URL}/repos/clone`,
           {
             method: "POST",
+            credentials: "include",
             headers: {
               "Content-Type": "application/json",
             },
@@ -267,6 +271,7 @@ function Dashboard() {
       `${process.env.REACT_APP_BACKEND_URL}/repos/fetch-repos`,
       {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -283,6 +288,7 @@ function Dashboard() {
 
   useEffect(() => {
     fetchRepos();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useEffect(() => {

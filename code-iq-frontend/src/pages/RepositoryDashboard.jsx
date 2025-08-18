@@ -78,7 +78,11 @@ function RepositoryDashboard() {
       setLoading(true);
       try {
         const response = await fetch(
-          `${process.env.REACT_APP_BACKEND_URL}/repos/fetch-repo-info/${repoId}`
+          `${process.env.REACT_APP_BACKEND_URL}/repos/fetch-repo-info/${repoId}`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
         );
         if (!response.ok) {
           throw new Error("Failed to fetch repository data");
@@ -322,6 +326,7 @@ function RepositoryDashboard() {
         `${process.env.REACT_APP_BACKEND_URL}/repos/${repoId}`,
         {
           method: "DELETE",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },

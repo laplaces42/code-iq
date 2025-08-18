@@ -19,6 +19,7 @@ function MenuBar() {
       // Clear user data and session on backend
       await fetch(`${process.env.REACT_APP_BACKEND_URL}/auth/logout`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },

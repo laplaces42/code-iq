@@ -20,6 +20,7 @@ function AuthCallback() {
             `${process.env.REACT_APP_BACKEND_URL}/auth/callback`,
             {
               method: "POST",
+              credentials: "include",
               headers: {
                 "Content-Type": "application/json",
               },

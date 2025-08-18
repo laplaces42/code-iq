@@ -80,7 +80,7 @@ async function getAuthorization(req, res) {
     res.cookie("jwt", newAccessToken.compact(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      sameSite: "None",
       maxAge: JWT_EXPIRATION_HOURS * 60 * 60 * 1000, // 1 hour
     });
     jwt = newAccessToken.compact();

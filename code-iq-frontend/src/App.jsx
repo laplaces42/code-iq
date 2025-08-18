@@ -92,6 +92,7 @@ function RouteChangeChecker() {
         `${process.env.REACT_APP_BACKEND_URL}/auth/verify`,
         {
           method: "GET",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -105,6 +106,7 @@ function RouteChangeChecker() {
             `${process.env.REACT_APP_BACKEND_URL}/auth/fetch-user`,
             {
               method: "POST",
+              credentials: "include",
               headers: {
                 "Content-Type": "application/json",
               },
@@ -126,6 +128,7 @@ function RouteChangeChecker() {
           `${process.env.REACT_APP_BACKEND_URL}/auth/refresh`,
           {
             method: "POST",
+            credentials: "include",
             headers: {
               "Content-Type": "application/json",
             },
@@ -138,6 +141,7 @@ function RouteChangeChecker() {
               `${process.env.REACT_APP_BACKEND_URL}/auth/fetch-user`,
               {
                 method: "POST",
+                credentials: "include",
                 headers: {
                   "Content-Type": "application/json",
                 },
