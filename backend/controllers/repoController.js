@@ -325,7 +325,7 @@ async function cloneRepo(req, res) {
     });
 
     // Build authenticated clone URL for private repos
-    const repoUrl = `https://${accessToken}@github.com/${repoName}.git`; 
+    const repoUrl = `https://${accessToken}@github.com/${repoName}.git`;
 
     // Use Promise wrapper for exec
     await new Promise((resolve, reject) => {
