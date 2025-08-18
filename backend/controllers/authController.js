@@ -71,7 +71,6 @@ async function setCookies(req, res, user, supabase) {
     res.cookie("refresh", refreshPlain, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // Always true for production cross-origin
-      sameSite: "None", // Required for cross-origin cookies
       maxAge: SESSION_EXPIRATION_DAYS * 24 * 60 * 60 * 1000, // 90 days
     });
 
@@ -89,7 +88,6 @@ async function setCookies(req, res, user, supabase) {
     res.cookie("jwt", jwt.compact(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // Always true for production cross-origin
-      sameSite: "None", // Required for cross-origin cookies
       maxAge: JWT_EXPIRATION_HOURS * 60 * 60 * 1000, // 1 hour
     });
   } catch (error) {
@@ -323,7 +321,6 @@ async function refreshAccessToken(req, res) {
     res.cookie("jwt", newAccessToken.compact(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // Always true for production cross-origin
-      sameSite: "None", // Required for cross-origin cookies
       maxAge: JWT_EXPIRATION_HOURS * 60 * 60 * 1000, // 1 hour
     });
 
