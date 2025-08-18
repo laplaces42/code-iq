@@ -16,13 +16,16 @@ function AuthCallback() {
       if (code && !isProcessing) {
         setIsProcessing(true);
         try {
-          const response = await fetch("/auth/callback", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ code }),
-          });
+          const response = await fetch(
+            `${process.env.REACT_APP_BACKEND_URL}/auth/callback`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ code }),
+            }
+          );
 
           if (!response.ok) {
             throw new Error(`Authentication failed: ${response.status}`);

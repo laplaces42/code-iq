@@ -17,7 +17,7 @@ function MenuBar() {
   async function handleLogout() {
     try {
       // Clear user data and session on backend
-      await fetch("/auth/logout", {
+      await fetch(`${process.env.REACT_APP_BACKEND_URL}/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

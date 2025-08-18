@@ -47,12 +47,15 @@ function Dashboard() {
 
   async function checkInstallation() {
     try {
-      const response = await fetch("/repos/check-installation", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/repos/check-installation`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -68,13 +71,16 @@ function Dashboard() {
 
   async function fetchNewRepos(installationId) {
     try {
-      const response = await fetch("/repos/fetch-new-repos", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ installationId }),
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/repos/fetch-new-repos`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ installationId }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -133,7 +139,7 @@ function Dashboard() {
 
   async function scanFullRepo(snapshotId) {
     // TODO: Implement repository scanning logic
-    await fetch("/scan/start", {
+    await fetch(`${process.env.REACT_APP_BACKEND_URL}/scan/start`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -147,17 +153,20 @@ function Dashboard() {
     if (repository.installed) {
       setConnectingRepo(repository.id);
       try {
-        const response = await fetch("/repos/clone", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            repoName: repository.name,
-            repoId: repository.id,
-            userId: user?.id,
-          }),
-        });
+        const response = await fetch(
+          `${process.env.REACT_APP_BACKEND_URL}/repos/clone`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              repoName: repository.name,
+              repoId: repository.id,
+              userId: user?.id,
+            }),
+          }
+        );
         if (response.ok) {
           const data = await response.json();
           await scanFullRepo(data.snapshotId);
@@ -254,13 +263,16 @@ function Dashboard() {
   async function fetchRepos() {
     if (!user?.id) return;
 
-    const response = await fetch("/repos/fetch-repos", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ userId: user.id }),
-    });
+    const response = await fetch(
+      `${process.env.REACT_APP_BACKEND_URL}/repos/fetch-repos`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: user.id }),
+      }
+    );
     if (response.ok) {
       const data = await response.json();
       setRepoList(data.repos || []);

@@ -13,7 +13,7 @@ import { Toaster } from "react-hot-toast";
 function App() {
   // Validate required environment variables
   useEffect(() => {
-    const requiredEnvVars = ["REACT_APP_CLIENT_ID"];
+    const requiredEnvVars = ["REACT_APP_CLIENT_ID", "REACT_APP_BACKEND_URL"];
     const missingVars = requiredEnvVars.filter(
       (varName) => !process.env[varName]
     );
@@ -88,23 +88,29 @@ function RouteChangeChecker() {
     }
 
     async function checkAuth() {
-      const jwtResult = await fetch("/auth/verify", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const jwtResult = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/auth/verify`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (jwtResult.ok) {
         const { userId } = await jwtResult.json();
         if (!user) {
-          const userResult = await fetch("/auth/fetch-user", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ userId }),
-          });
+          const userResult = await fetch(
+            `${process.env.REACT_APP_BACKEND_URL}/auth/fetch-user`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ userId }),
+            }
+          );
           if (userResult.ok) {
             const { user } = await userResult.json();
             setUser(user);
@@ -116,22 +122,28 @@ function RouteChangeChecker() {
           setAuthStatus("authenticated");
         }
       } else {
-        const refreshResult = await fetch("/auth/refresh", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+        const refreshResult = await fetch(
+          `${process.env.REACT_APP_BACKEND_URL}/auth/refresh`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
         if (refreshResult.ok) {
           const { userId } = await refreshResult.json();
           if (!user) {
-            const userResult = await fetch("/auth/fetch-user", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ userId }),
-            });
+            const userResult = await fetch(
+              `${process.env.REACT_APP_BACKEND_URL}/auth/fetch-user`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ userId }),
+              }
+            );
             if (userResult.ok) {
               const { user } = await userResult.json();
               setUser(user);

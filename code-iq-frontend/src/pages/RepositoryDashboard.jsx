@@ -77,7 +77,9 @@ function RepositoryDashboard() {
     async function fetchRepoInfo() {
       setLoading(true);
       try {
-        const response = await fetch(`/repos/fetch-repo-info/${repoId}`);
+        const response = await fetch(
+          `${process.env.REACT_APP_BACKEND_URL}/repos/fetch-repo-info/${repoId}`
+        );
         if (!response.ok) {
           throw new Error("Failed to fetch repository data");
         }
@@ -316,12 +318,15 @@ function RepositoryDashboard() {
   const handleDeleteRepository = async () => {
     setDeletingRepo(true);
     try {
-      const response = await fetch(`/repos/${repoId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/repos/${repoId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.ok) {
         toast.success("Repository removed successfully! Redirecting...");
