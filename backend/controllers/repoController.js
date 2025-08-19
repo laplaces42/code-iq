@@ -345,6 +345,24 @@ async function cloneRepo(req, res) {
       });
     });
 
+    // Use registry image with fallback
+    const imageName =
+      process.env.SCANNER_IMAGE || "laplaces42/code-iq-scanners:latest";
+
+    // Pull latest image from registry
+    console.log(`Pulling scanner image: ${imageName}`);
+    await new Promise((resolve, reject) => {
+      exec(`docker pull ${imageName}`, (error, stdout, stderr) => {
+        if (error) {
+          console.warn(
+            `Warning: Failed to pull image ${imageName}: ${error.message}`
+          );
+          console.log("Continuing with local image if available...");
+        }
+        resolve();
+      });
+    });
+
     const dockerArgs = [
       "run",
       "--rm",
@@ -355,12 +373,13 @@ async function cloneRepo(req, res) {
       "-e",
       `DB_KEY=${process.env.DB_KEY}`,
       "-e",
-      `BACKEND_URL=http://host.docker.internal:3000`,
-      "code-iq-scanners:latest",
+      `BACKEND_URL=${
+        process.env.BACKEND_URL || "http://host.docker.internal:3000"
+      }`,
+      imageName,
       `--scan_id=${scanData.id}`,
       "--scan_path=/scan-workspace",
     ];
-
 
     const scanProcess = spawn("docker", dockerArgs, {
       shell: true,
