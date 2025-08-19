@@ -11,12 +11,9 @@ from secrets_pii import Secrets
 from todo import Todos
 from collections import defaultdict
 from supabase import create_client
-from dotenv import load_dotenv
 import os
 import requests
 from datetime import datetime, timezone
-
-load_dotenv()
 
 class ScanOrchestrator:
     """Orchestrates multiple scanners for comprehensive code health analysis"""
@@ -398,25 +395,18 @@ def main():
     # Create orchestrator
     orchestrator = ScanOrchestrator(max_concurrent_scanners=2, scan_id=args.scan_id)
 
-
     # Register scanners
     orchestrator.register_scanner(Linter(max_workers=4), 'health')
     orchestrator.register_scanner(Secrets(max_workers=4), 'security')
     orchestrator.register_scanner(Todos(max_workers=4), 'knowledge')
 
-    # Add more scanners as they're implemented
-    # orchestrator.register_scanner(ComplexityScanner())
-    # orchestrator.register_scanner(SecurityScanner())
-
     # Run comprehensive scan
     results = orchestrator.scan_codebase(args.scan_path)
-    # results = orchestrator.scan_codebase('.')
 
     if results and results['scanner_results']:
         # Extract scan path from results metadata for relative path conversion
         scan_path_from_results = results['scan_metadata']['path_scanned']
-        raw_scores = orchestrator.generate_scores(results['scanner_results'], scan_path_from_results)
-        # print(raw_scores)
+        orchestrator.generate_scores(results['scanner_results'], scan_path_from_results)
 
 if __name__ == "__main__":
     main()
