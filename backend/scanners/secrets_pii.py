@@ -31,7 +31,7 @@ class Secrets(BaseScanner):
         except subprocess.TimeoutExpired:
             for path in files:
                 results[str(path)] = {
-                    'raw': "",
+                    'raw': [],
                     'errors': ['Secrets scanning timeout (10 min)'],
                     'score': 0
                 }
@@ -52,9 +52,8 @@ class Secrets(BaseScanner):
                 per_file[fpath].append(line)
 
         for path in files:
-            lst  = per_file.get(str(path), [])
-            raw  = "\n".join(lst)
-            issues = len(lst)
+            raw  = per_file.get(str(path), [])
+            issues = len(raw)
             results[str(path)] = {
                 "raw": raw,
                 "errors": [],
@@ -78,7 +77,7 @@ class Secrets(BaseScanner):
             except subprocess.TimeoutExpired:
                 for path in batch:
                     results[str(path)] = {
-                        'raw': "",
+                        'raw': [],
                         'errors': ['Secrets scanning timeout (60s)'],
                         'score': 0
                     }
@@ -95,9 +94,8 @@ class Secrets(BaseScanner):
                     per_file[path].append(line)
 
             for path in batch:
-                lst  = per_file.get(str(path), [])
-                raw  = "\n".join(lst)
-                issues = len(lst)
+                raw  = per_file.get(str(path), [])
+                issues = len(raw)
                 results[str(path)] = {
                     "raw": raw,
                     "errors": [],

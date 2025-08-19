@@ -13,7 +13,6 @@ import {
   RotateCcw,
   ArrowLeft,
   Github,
-  Eye,
   History,
   Bug,
   Settings,
@@ -23,6 +22,7 @@ import {
   FolderSync,
 } from "lucide-react";
 import styles from "./RepositoryDashboard.module.css";
+import ScannerResultsModal from "../components/ScannerResultsModal";
 
 function RepositoryDashboard() {
   const { repoId } = useParams();
@@ -38,6 +38,10 @@ function RepositoryDashboard() {
   const [activeWorkspaceView, setActiveWorkspaceView] = useState("dashboard"); // 'dashboard', 'files', 'scans', 'prs', 'settings'
   const [selectedFile, setSelectedFile] = useState(null);
   const [scoreFilter, setScoreFilter] = useState("overall"); // 'overall', 'health', 'security', 'knowledge'
+
+  // Scanner Results Modal state
+  const [showScannerModal, setShowScannerModal] = useState(false);
+  const [activeModalTab, setActiveModalTab] = useState("health"); // 'health', 'security', 'todos'
 
   // File explorer state
   const [currentPath, setCurrentPath] = useState(""); // Current folder path
@@ -192,11 +196,22 @@ function RepositoryDashboard() {
 
   // Helper functions
   const calculateOverallScore = (file) => {
-    if (!file) return 0;
-    return (file.healthScore + file.securityScore + file.knowledgeScore) / 3;
+    if (!file) return null;
+
+    const scores = [];
+    if (file.healthScore !== null && file.healthScore !== undefined)
+      scores.push(file.healthScore);
+    if (file.securityScore !== null && file.securityScore !== undefined)
+      scores.push(file.securityScore);
+    if (file.knowledgeScore !== null && file.knowledgeScore !== undefined)
+      scores.push(file.knowledgeScore);
+
+    if (scores.length === 0) return null;
+    return scores.reduce((sum, score) => sum + score, 0) / scores.length;
   };
 
   const getScoreColor = (score) => {
+    if (score === null || score === undefined) return "#6b7280"; // gray for no score
     if (score >= 8) return "#10b981"; // green
     if (score >= 6) return "#f59e0b"; // yellow
     if (score >= 4) return "#f97316"; // orange
@@ -204,10 +219,16 @@ function RepositoryDashboard() {
   };
 
   const getScoreLabel = (score) => {
+    if (score === null || score === undefined) return "No Data";
     if (score >= 8) return "Excellent";
     if (score >= 6) return "Good";
     if (score >= 4) return "Needs Work";
     return "Critical";
+  };
+
+  const formatScore = (score) => {
+    if (score === null || score === undefined) return "--";
+    return score.toFixed(1);
   };
 
   const sortedFiles = [...fileSnapshots].sort((a, b) => {
@@ -219,6 +240,12 @@ function RepositoryDashboard() {
       scoreFilter === "overall"
         ? calculateOverallScore(b)
         : b[`${scoreFilter}Score`];
+
+    // Handle null scores - put them at the end
+    if (scoreA === null && scoreB === null) return 0;
+    if (scoreA === null) return 1;
+    if (scoreB === null) return -1;
+
     return scoreB - scoreA;
   });
 
@@ -265,11 +292,11 @@ function RepositoryDashboard() {
         selectedFile
           ? `The selected file "${
               selectedFile.filePath
-            }" has scores: Health ${selectedFile.healthScore?.toFixed(
-              1
-            )}, Security ${selectedFile.securityScore?.toFixed(
-              1
-            )}, Knowledge ${selectedFile.knowledgeScore?.toFixed(1)}.`
+            }" has scores: Health ${formatScore(
+              selectedFile.healthScore
+            )}, Security ${formatScore(
+              selectedFile.securityScore
+            )}, Knowledge ${formatScore(selectedFile.knowledgeScore)}.`
           : "Click on any file to see detailed metrics."
       } ${context}`;
     }
@@ -388,6 +415,39 @@ function RepositoryDashboard() {
     ]);
   };
 
+  async function fetchScannerResults() {
+    try {
+      if (!repository?.id || !selectedFile.filePath) {
+        return {};
+      }
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/repos/fetch-scanner-results`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            repoId: repository?.id,
+            filePath: selectedFile.filePath,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch scanner results");
+      }
+
+      const data = await response.json();
+      return data.scanResults;
+    } catch (error) {
+      toast.error("Failed to fetch scanner results");
+      setShowScannerModal(false);
+      return {};
+    }
+  }
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -405,24 +465,14 @@ function RepositoryDashboard() {
       <div className={styles.workspacePanel}>
         {/* Header */}
         <div className={styles.header}>
+          <h1 className={styles.repoName}>{repository?.name}</h1>
+          {repository?.description && (
+            <p className={styles.repoDescription}>{repository.description}</p>
+          )}
           <div className={styles.repoInfo}>
-            <div className={styles.breadcrumb}>
-              <button
-                onClick={() => navigate("/dashboard")}
-                className={styles.breadcrumbLink}
-              >
-                Dashboard
-              </button>
-              <span className={styles.breadcrumbSeparator}>/</span>
-              <span className={styles.breadcrumbCurrent}>
-                {repository?.name}
-              </span>
-            </div>
-            <h1 className={styles.repoName}>{repository?.fullName}</h1>
-            <p className={styles.repoDescription}>{repository?.description}</p>
-            <div className={styles.repoMeta}>
-              <span className={styles.language}>{repository?.language}</span>
-            </div>
+            {/* <div className={styles.repoMeta}>
+              <span className={styles.repoBadge}>{repository?.name}</span>
+            </div> */}
           </div>
 
           <div className={styles.viewToggle}>
@@ -491,7 +541,7 @@ function RepositoryDashboard() {
                         color: getScoreColor(calculateOverallScore(repository)),
                       }}
                     >
-                      {calculateOverallScore(repository).toFixed(1)}
+                      {formatScore(calculateOverallScore(repository))}
                     </div>
                     <div className={styles.scoreLabel}>
                       {getScoreLabel(calculateOverallScore(repository))}
@@ -508,7 +558,7 @@ function RepositoryDashboard() {
                         color: getScoreColor(repository?.healthScore || 0),
                       }}
                     >
-                      {repository?.healthScore?.toFixed(1) || "0.0"}
+                      {formatScore(repository?.healthScore)}
                     </div>
                     <div className={styles.scoreLabel}>
                       {getScoreLabel(repository?.healthScore || 0)}
@@ -528,7 +578,7 @@ function RepositoryDashboard() {
                         color: getScoreColor(repository?.securityScore || 0),
                       }}
                     >
-                      {repository?.securityScore?.toFixed(1) || "0.0"}
+                      {formatScore(repository?.securityScore)}
                     </div>
                     <div className={styles.scoreLabel}>
                       {getScoreLabel(repository?.securityScore || 0)}
@@ -548,7 +598,7 @@ function RepositoryDashboard() {
                         color: getScoreColor(repository?.knowledgeScore || 0),
                       }}
                     >
-                      {repository?.knowledgeScore?.toFixed(1) || "0.0"}
+                      {formatScore(repository?.knowledgeScore)}
                     </div>
                     <div className={styles.scoreLabel}>
                       {getScoreLabel(repository?.knowledgeScore || 0)}
@@ -592,7 +642,13 @@ function RepositoryDashboard() {
                       <div
                         key={file.id}
                         className={styles.fileItem}
-                        onClick={() => handleFileSelect(file)}
+                        onClick={() => {
+                          setActiveWorkspaceView("files");
+                          setCurrentPath(
+                            file.filePath.split("/").slice(0, -1).join("/")
+                          );
+                          handleFileSelect(file);
+                        }}
                       >
                         <div className={styles.fileName}>{file.filePath}</div>
                         <div
@@ -606,8 +662,8 @@ function RepositoryDashboard() {
                           }}
                         >
                           {scoreFilter === "overall"
-                            ? calculateOverallScore(file).toFixed(1)
-                            : file[`${scoreFilter}Score`]?.toFixed(1)}
+                            ? formatScore(calculateOverallScore(file))
+                            : formatScore(file[`${scoreFilter}Score`])}
                         </div>
                       </div>
                     ))}
@@ -621,7 +677,13 @@ function RepositoryDashboard() {
                       <div
                         key={file.id}
                         className={styles.fileItem}
-                        onClick={() => handleFileSelect(file)}
+                        onClick={() => {
+                          setActiveWorkspaceView("files");
+                          setCurrentPath(
+                            file.filePath.split("/").slice(0, -1).join("/")
+                          );
+                          handleFileSelect(file);
+                        }}
                       >
                         <div className={styles.fileName}>{file.filePath}</div>
                         <div
@@ -635,8 +697,8 @@ function RepositoryDashboard() {
                           }}
                         >
                           {scoreFilter === "overall"
-                            ? calculateOverallScore(file).toFixed(1)
-                            : file[`${scoreFilter}Score`]?.toFixed(1)}
+                            ? formatScore(calculateOverallScore(file))
+                            : formatScore(file[`${scoreFilter}Score`])}
                         </div>
                       </div>
                     ))}
@@ -659,13 +721,16 @@ function RepositoryDashboard() {
                   <span>
                     Average score:{" "}
                     {fileSnapshots.length > 0
-                      ? (
-                          fileSnapshots.reduce(
-                            (acc, file) => acc + calculateOverallScore(file),
-                            0
-                          ) / fileSnapshots.length
-                        ).toFixed(1)
-                      : "0.0"}
+                      ? formatScore(
+                          fileSnapshots.reduce((acc, file) => {
+                            const score = calculateOverallScore(file);
+                            return score !== null ? acc + score : acc;
+                          }, 0) /
+                            fileSnapshots.filter(
+                              (file) => calculateOverallScore(file) !== null
+                            ).length
+                        )
+                      : "--"}
                   </span>
                 </div>
               </div>
@@ -692,16 +757,9 @@ function RepositoryDashboard() {
                             if (index === 0) {
                               setCurrentPath("");
                             } else {
-                              const pathParts = getBreadcrumbs().slice(
-                                1,
-                                index + 1
+                              setCurrentPath(
+                                currentPath.split("/").slice(0, index).join("/")
                               );
-                              // Remove file name if it exists in the path
-                              const filteredParts = pathParts.filter(
-                                (_, i) =>
-                                  !(selectedFile && i === pathParts.length - 1)
-                              );
-                              setCurrentPath(filteredParts.join("/"));
                             }
                           }}
                         >
@@ -773,16 +831,16 @@ function RepositoryDashboard() {
                         {item.type === "file" && (
                           <div className={styles.fileScores}>
                             <span className={styles.scoreIndicator}>
-                              O: {calculateOverallScore(item.data).toFixed(1)}
+                              O: {formatScore(calculateOverallScore(item.data))}
                             </span>
                             <span className={styles.scoreIndicator}>
-                              H: {item.data.healthScore?.toFixed(1)}
+                              H: {formatScore(item.data.healthScore)}
                             </span>
                             <span className={styles.scoreIndicator}>
-                              S: {item.data.securityScore?.toFixed(1)}
+                              S: {formatScore(item.data.securityScore)}
                             </span>
                             <span className={styles.scoreIndicator}>
-                              K: {item.data.knowledgeScore?.toFixed(1)}
+                              K: {formatScore(item.data.knowledgeScore)}
                             </span>
                           </div>
                         )}
@@ -809,83 +867,98 @@ function RepositoryDashboard() {
                     </button>
                   </div>
 
-                  <div className={styles.compactScores}>
-                    <div className={styles.scoreCard}>
-                      <div className={styles.scoreLabel}>Overall</div>
-                      <div
-                        className={styles.scoreValue}
-                        style={{
-                          color: getScoreColor(
-                            calculateOverallScore(selectedFile)
-                          ),
-                        }}
-                      >
-                        {calculateOverallScore(selectedFile).toFixed(1)}
+                  <div className={styles.fileDetailsGrid}>
+                    <div className={styles.scoresGrid}>
+                      <div className={styles.scoreCard}>
+                        <div className={styles.scoreLabel}>Overall</div>
+                        <div
+                          className={styles.scoreValue}
+                          style={{
+                            color: getScoreColor(
+                              calculateOverallScore(selectedFile)
+                            ),
+                          }}
+                        >
+                          {formatScore(calculateOverallScore(selectedFile))}
+                        </div>
+                        <div className={styles.scoreRating}>
+                          {getScoreLabel(calculateOverallScore(selectedFile))}
+                        </div>
                       </div>
-                      <div className={styles.scoreRating}>
-                        {getScoreLabel(calculateOverallScore(selectedFile))}
+
+                      <div className={styles.scoreCard}>
+                        <div className={styles.scoreLabel}>Health</div>
+                        <div
+                          className={styles.scoreValue}
+                          style={{
+                            color: getScoreColor(selectedFile.healthScore),
+                          }}
+                        >
+                          {formatScore(selectedFile.healthScore)}
+                        </div>
+                        <div className={styles.scoreDescription}>
+                          Code quality
+                        </div>
+                      </div>
+
+                      <div className={styles.scoreCard}>
+                        <div className={styles.scoreLabel}>Security</div>
+                        <div
+                          className={styles.scoreValue}
+                          style={{
+                            color: getScoreColor(selectedFile.securityScore),
+                          }}
+                        >
+                          {formatScore(selectedFile.securityScore)}
+                        </div>
+                        <div className={styles.scoreDescription}>
+                          Vulnerabilities
+                        </div>
+                      </div>
+
+                      <div className={styles.scoreCard}>
+                        <div className={styles.scoreLabel}>Knowledge</div>
+                        <div
+                          className={styles.scoreValue}
+                          style={{
+                            color: getScoreColor(selectedFile.knowledgeScore),
+                          }}
+                        >
+                          {formatScore(selectedFile.knowledgeScore)}
+                        </div>
+                        <div className={styles.scoreDescription}>
+                          Documentation
+                        </div>
                       </div>
                     </div>
 
-                    <div className={styles.scoreCard}>
-                      <div className={styles.scoreLabel}>Health</div>
-                      <div
-                        className={styles.scoreValue}
-                        style={{
-                          color: getScoreColor(selectedFile.healthScore),
-                        }}
-                      >
-                        {selectedFile.healthScore?.toFixed(1)}
-                      </div>
-                      <div className={styles.scoreDescription}>
-                        Code quality
-                      </div>
-                    </div>
-
-                    <div className={styles.scoreCard}>
-                      <div className={styles.scoreLabel}>Security</div>
-                      <div
-                        className={styles.scoreValue}
-                        style={{
-                          color: getScoreColor(selectedFile.securityScore),
-                        }}
-                      >
-                        {selectedFile.securityScore?.toFixed(1)}
-                      </div>
-                      <div className={styles.scoreDescription}>
-                        Vulnerabilities
+                    <div className={styles.actionsSection}>
+                      <h4>File Actions</h4>
+                      <div className={styles.actionsPanel}>
+                        <div className={styles.fileActions}>
+                          <button
+                            className={styles.actionButton}
+                            onClick={() => setShowScannerModal(true)}
+                          >
+                            <Bug size={16} /> View Scanner Results
+                          </button>
+                          <button
+                            className={styles.actionButton}
+                            onClick={() =>
+                              window.open(
+                                `https://github.com/${repository?.name}/blob/main/${selectedFile.filePath}`,
+                                "_blank"
+                              )
+                            }
+                          >
+                            <Github size={16} /> Open in GitHub
+                          </button>
+                          <button className={styles.actionButton}>
+                            <History size={16} /> Git History
+                          </button>
+                        </div>
                       </div>
                     </div>
-
-                    <div className={styles.scoreCard}>
-                      <div className={styles.scoreLabel}>Knowledge</div>
-                      <div
-                        className={styles.scoreValue}
-                        style={{
-                          color: getScoreColor(selectedFile.knowledgeScore),
-                        }}
-                      >
-                        {selectedFile.knowledgeScore?.toFixed(1)}
-                      </div>
-                      <div className={styles.scoreDescription}>
-                        Documentation
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={styles.fileActions}>
-                    <button className={styles.actionButton}>
-                      <Bug size={16} /> View Issues
-                    </button>
-                    <button className={styles.actionButton}>
-                      <History size={16} /> View History
-                    </button>
-                    <button className={styles.actionButton}>
-                      <Github size={16} /> Open in GitHub
-                    </button>
-                    <button className={styles.actionButton}>
-                      <Eye size={16} /> View Code
-                    </button>
                   </div>
                 </div>
               )}
@@ -1233,6 +1306,16 @@ function RepositoryDashboard() {
           </button>
         </form>
       </div>
+
+      {/* Scanner Results Modal */}
+      <ScannerResultsModal
+        isOpen={showScannerModal}
+        onClose={() => setShowScannerModal(false)}
+        selectedFile={selectedFile}
+        activeTab={activeModalTab}
+        setActiveTab={setActiveModalTab}
+        fetchScannerResults={fetchScannerResults}
+      />
     </div>
   );
 }

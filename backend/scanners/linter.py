@@ -7,7 +7,7 @@ from base_scanner import BaseScanner
 class Linter(BaseScanner):
 
     COMMANDS = {
-        '.py': ['flake8', '--format=%(path)s:%(row)d:%(col)d [%(code)s]: %(text)s']
+        '.py': ['flake8', '--format=%(path)s:%(row)d:%(col)d: [%(code)s]: %(text)s']
     }
     def __init__(self, max_workers=None, exclude_patterns=None):
         super().__init__(max_workers, exclude_patterns)
@@ -29,7 +29,7 @@ class Linter(BaseScanner):
         """Lint a single file using subprocess for better isolation"""
         result = {
             str(file_path): {
-                'raw': "",
+                'raw': [],
                 'errors': [],
                 'score': 0
             }
@@ -44,7 +44,7 @@ class Linter(BaseScanner):
             lint_result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
             
             if lint_result.stdout:
-                result[str(file_path)]['raw'] = lint_result.stdout
+                result[str(file_path)]['raw'] = lint_result.stdout.split('\n')
                 result[str(file_path)]['score'] = 100 - len(lint_result.stdout.split('\n'))
                     
         except subprocess.TimeoutExpired:
@@ -77,7 +77,7 @@ class Linter(BaseScanner):
                 except subprocess.TimeoutExpired:
                     for path in paths:
                         results[str(path)] = {
-                            'raw': "",
+                            'raw': [],
                             'errors': ['Linting timeout (60s)'],
                             'score': 0
                         }
@@ -86,7 +86,7 @@ class Linter(BaseScanner):
                 if proc.returncode not in (0, 1):
                     err = proc.stderr.strip() or "flake8 crash"
                     for p in paths:
-                        results[str(p)] = {"raw":"", "errors":[err], "score":0}
+                        results[str(p)] = {"raw": [], "errors":[err], "score":0}
                     continue
             
                 per_file = defaultdict(list)
@@ -94,12 +94,11 @@ class Linter(BaseScanner):
                     if not line: 
                         continue
                     path_part = line.split(':', 1)[0]
-                    per_file[path_part].append(line)
+                    per_file[path_part].append(line.split(':', 1)[1].strip())
 
                 for path in paths:
-                    lst  = per_file.get(str(path), [])
-                    raw  = "\n".join(lst)
-                    issues = len(lst)
+                    raw  = per_file.get(str(path), [])
+                    issues = len(raw)
                     results[str(path)] = {
                         "raw": raw,
                         "errors": [],

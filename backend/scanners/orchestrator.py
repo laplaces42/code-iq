@@ -176,46 +176,10 @@ class ScanOrchestrator:
     
     def generate_scores(self, scanner_results: Dict[str, Dict[str, Any]], scan_path: str = None) -> Dict[str, Dict[str, Any]]:
         """Generate a summary of results for each file scanned"""
-        file_out = defaultdict(dict)
-        
-        # Get the base path for making relative paths
-        if scan_path:
-            base_path = Path(scan_path).resolve()
-        else:
-            base_path = Path.cwd()
-        
-        # Add memory safety check
-        total_files_processed = 0
-        max_files_limit = 10000  # Prevent processing too many files at once
-        
-        for scanner, result in scanner_results.items():
-            if not isinstance(result, dict):
-                print(f"Warning: Scanner {scanner} returned non-dict result")
-                continue
-                
-            for file, details in result.items():
-                total_files_processed += 1
-                if total_files_processed > max_files_limit:
-                    print(f"Warning: Hit file processing limit ({max_files_limit}), stopping to prevent memory issues")
-                    break
-                
-                # Convert absolute path to relative path
-                try:
-                    file_path = Path(file).resolve()
-                    relative_path = file_path.relative_to(base_path)
-                    file_key = str(relative_path)
-                except (ValueError, OSError):
-                    # If we can't make it relative, use the original path
-                    file_key = file
-                    
-                if isinstance(details, dict):
-                    file_out[file_key][scanner] = details.get('score', 0)
-                else:
-                    print(f"Warning: Invalid details format for {file} in {scanner}")
-                    file_out[file_key][scanner] = 0
-        
+
+        file_out = self._generate_file_results(scan_path, scanner_results)
         file_scores = defaultdict(dict)
-        for file, scores in file_out.items():
+        for file, out in file_out.items():
             # Get scanner lists with safe defaults
             health_scanners = self.scanner_types.get('health', [])
             security_scanners = self.scanner_types.get('security', [])
@@ -223,50 +187,96 @@ class ScanOrchestrator:
             
             # Calculate health score with division by zero protection
             if health_scanners:
-                health_score = sum(scores.get(scanner, 0) for scanner in health_scanners) / len(health_scanners)
-                file_scores[file]['health'] = health_score / 10
+                file_scores[file]['health'] = {}
+                health_scans = [scan for scan in out if scan in health_scanners]
+                if health_scans:
+                    health_sum = 0
+                    for scan in health_scans:
+                        health_sum += out[scan].get('score', 0)
+                        if file_scores[file]['health'].get('scanners'):
+                            file_scores[file]['health']['scanners'].update({scan: out[scan]})
+                        else:
+                            file_scores[file]['health']['scanners'] = {scan: out[scan]}
+                    health_score = health_sum / len(health_scans) if health_scans else 0
+                    file_scores[file]['health']['score'] = health_score / 10
             else:
-                file_scores[file]['health'] = 0
-            
+                file_scores[file]['health'] = {'score': 0, 'scanners': {}}
+
             # Calculate security score with division by zero protection
             if security_scanners:
-                security_score = sum(scores.get(scanner, 0) for scanner in security_scanners) / len(security_scanners)
-                file_scores[file]['security'] = security_score / 10
+                file_scores[file]['security'] = {}
+                security_scans = [scan for scan in out if scan in security_scanners]
+                if security_scans:
+                    security_sum = 0
+                    for scan in security_scans:
+                        security_sum += out[scan].get('score', 0)
+                        if file_scores[file]['security'].get('scanners'):
+                            file_scores[file]['security']['scanners'].update({scan: out[scan]})
+                        else:
+                            file_scores[file]['security']['scanners'] = {scan: out[scan]}
+                    security_score = security_sum / len(security_scans) if security_scans else 0
+                    file_scores[file]['security']['score'] = security_score / 10
             else:
-                file_scores[file]['security'] = 0
-            
+                file_scores[file]['security'] = {'score': 0, 'scanners': {}}
+
             # Calculate knowledge score with division by zero protection
             if knowledge_scanners:
-                knowledge_score = sum(scores.get(scanner, 0) for scanner in knowledge_scanners) / len(knowledge_scanners)
-                file_scores[file]['knowledge'] = knowledge_score / 10
+                file_scores[file]['knowledge'] = {}
+                knowledge_scans = [scan for scan in out if scan in knowledge_scanners]
+                if knowledge_scans:
+                    knowledge_sum = 0
+                    for scan in knowledge_scans:
+                        knowledge_sum += out[scan].get('score', 0)
+                        if file_scores[file]['knowledge'].get('scanners'):
+                            file_scores[file]['knowledge']['scanners'].update({scan: out[scan]})
+                        else:
+                            file_scores[file]['knowledge']['scanners'] = {scan: out[scan]}
+                    knowledge_score = knowledge_sum / len(knowledge_scans) if knowledge_scans else 0
+                    file_scores[file]['knowledge']['score'] = knowledge_score / 10
             else:
-                file_scores[file]['knowledge'] = 0
-        
+                file_scores[file]['knowledge'] = {'score': 0, 'scanners': {}}
+
         file_scores = dict(file_scores)
+        # print(file_scores)
 
         repo_id = self.supabase.table("active_scans").select("repoSnapshotId").eq("id", self.scan_id).single().execute().data.get("repoSnapshotId")
 
-        health_total = 0.0
-        security_total = 0.0
-        knowledge_total = 0.0
+        health_total = []
+        security_total = []
+        knowledge_total = []
 
-        for file, scores in file_scores.items():
+        for file, scan in file_scores.items():
+            health_score = scan.get('health', {}).get('score')
+            security_score = scan.get('security', {}).get('score')
+            knowledge_score = scan.get('knowledge', {}).get('score')
+            
             self.supabase.table("file_snapshots").insert({
                 "repoSnapshotId": repo_id,
                 "filePath": file,
-                "healthScore": scores.get('health', 0.0),
-                "securityScore": scores.get('security', 0.0),
-                "knowledgeScore": scores.get('knowledge', 0.0)
+                "healthScore": health_score,
+                "securityScore": security_score,
+                "knowledgeScore": knowledge_score,
+                "scannerResults": scan
             }).execute()
 
-            health_total += scores.get('health', 0.0)
-            security_total += scores.get('security', 0.0)
-            knowledge_total += scores.get('knowledge', 0.0)
+            if health_score:
+                health_total.append(health_score)
+            if security_score:
+                security_total.append(security_score)
+            if knowledge_score:
+                knowledge_total.append(knowledge_score)
 
-        health_avg = health_total / len(file_scores) if file_scores else 0.0
-        security_avg = security_total / len(file_scores) if file_scores else 0.0
-        knowledge_avg = knowledge_total / len(file_scores) if file_scores else 0.0
-        overall_avg = (health_avg + security_avg + knowledge_avg) / 3 if (health_avg + security_avg + knowledge_avg) > 0 else 0.0
+        overall = []
+        health_avg = sum(health_total) / len(health_total) if health_total else None
+        if health_avg is not None:
+            overall.append(health_avg)
+        security_avg = sum(security_total) / len(security_total) if security_total else None
+        if security_avg is not None:
+            overall.append(security_avg)
+        knowledge_avg = sum(knowledge_total) / len(knowledge_total) if knowledge_total else None
+        if knowledge_avg is not None:
+            overall.append(knowledge_avg)
+        overall_avg = sum(overall) / len(overall) if overall else None
 
         self.supabase.table("active_scans").update({
             "status": "completed",
@@ -285,7 +295,7 @@ class ScanOrchestrator:
             "healthScore": health_avg,
             "securityScore": security_avg,
             "knowledgeScore": knowledge_avg,
-            "trend": overall_avg - prev_overall,
+            "trend": overall_avg - prev_overall if overall_avg is not None and prev_overall is not None else None,
         }).eq("id", repo_id).execute()
 
         try:
@@ -300,7 +310,46 @@ class ScanOrchestrator:
 
 
         return file_scores
-    
+
+    def _generate_file_results(self, scan_path: str, scanner_results: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+        file_out = defaultdict(dict)
+        
+        # Get the base path for making relative paths
+        if scan_path:
+            base_path = Path(scan_path).resolve()
+        else:
+            base_path = Path.cwd()
+        
+        
+        for scanner, result in scanner_results.items():
+            if not isinstance(result, dict):
+                print(f"Warning: Scanner {scanner} returned non-dict result")
+                continue
+                
+            for file, details in result.items():
+                # Convert absolute path to relative path
+                try:
+                    file_path = Path(file).resolve()
+                    relative_path = file_path.relative_to(base_path)
+                    file_key = str(relative_path)
+                except (ValueError, OSError):
+                    # If we can't make it relative, use the original path
+                    file_key = file
+                    
+                if isinstance(details, dict):
+                    file_out[file_key][scanner] = {}
+                    file_out[file_key][scanner]['score'] = details.get('score', 0)
+                    file_out[file_key][scanner]['raw'] = details.get('raw', [])
+                    file_out[file_key][scanner]['errors'] = details.get('errors', [])
+                else:
+                    print(f"Warning: Invalid details format for {file} in {scanner}")
+                    file_out[file_key][scanner] = {}
+                    file_out[file_key][scanner]['score'] = 0
+                    file_out[file_key][scanner]['raw'] = []
+                    file_out[file_key][scanner]['errors'] = []
+
+        return dict(file_out)
+
     def _generate_health_summary(self, scanner_results: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
         """Generate overall health summary from all scanner results"""
         summary = {
@@ -416,12 +465,10 @@ def main():
     # Run comprehensive scan
     results = orchestrator.scan_codebase(args.scan_path)
     # results = orchestrator.scan_codebase('.')
-
     if results and results['scanner_results']:
         # Extract scan path from results metadata for relative path conversion
         scan_path_from_results = results['scan_metadata']['path_scanned']
         raw_scores = orchestrator.generate_scores(results['scanner_results'], scan_path_from_results)
-        # print(raw_scores)
 
 if __name__ == "__main__":
     main()

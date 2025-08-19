@@ -21,7 +21,7 @@ class Todos(BaseScanner):
         """Find TODO comments in a file"""
         result = {
             str(file_path): {
-                'raw': "",
+                'raw': [],
                 'errors': [],
                 'score': 0
             }
@@ -33,17 +33,17 @@ class Todos(BaseScanner):
                     r'#.*?TODO.*',      # Python: # TODO: fix this
                     r'""".*?TODO.*?"""', # Python: """ TODO: fix this """
                     r'\'\'\'.*?TODO.*?\'\'\'', # Python: ''' TODO: fix this '''
-                    r'#.*?FIXME.*',     # Python: # FIXME: broken logic
+                    # r'#.*?FIXME.*',     # Python: # FIXME: broken logic, will implement in different scanner
                     r'//.*?TODO.*',     # JavaScript/C++: // TODO: implement
                     r'/\*.*?TODO.*?\*/', # Multi-line: /* TODO: refactor */
                 ]
                 todos = []
                 for line_num, line in enumerate(content.splitlines(), start=1):
                     for pattern in patterns:
-                        if re.search(pattern, line, re.IGNORECASE):
-                            todos.append(f"{line_num}: {line.strip()}")
+                        if match := re.search(pattern, line, re.IGNORECASE):
+                            todos.append(f'{line_num}:{match.start()}: TODO Found:  \'{match.group()}\'')
 
-                result[str(file_path)]['raw'] = "\n".join(todos)
+                result[str(file_path)]['raw'] = todos
                 result[str(file_path)]['score'] = 100-len(todos)
         except Exception as e:
             result[str(file_path)]['errors'].append(f'Error reading file: {str(e)}')

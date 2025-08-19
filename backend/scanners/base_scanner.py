@@ -14,11 +14,25 @@ class BaseScanner(ABC):
             '__pycache__', '.git', '.pytest_cache', 'node_modules', 
             '.venv', 'venv', '.env', 'build', 'dist', '.tox', '.mypy_cache'
         ] # default patterns to exclude from scanning
+        self.exclude_extensions = [
+            '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.ico', '.webp',
+            '.pdf', '.zip', '.tar', '.gz', '.rar', '.7z',
+            '.mp4', '.avi', '.mov', '.wmv', '.mp3', '.wav', '.flac',
+            '.exe', '.dll', '.so', '.dylib'
+        ] # file extensions to exclude
         self.results = []
         
     def should_exclude(self, path: Path) -> bool:
         """Check if path should be excluded from scanning"""
-        return any(part in self.exclude_patterns for part in path.parts)
+        # Check directory patterns
+        if any(part in self.exclude_patterns for part in path.parts):
+            return True
+        
+        # Check file extension patterns
+        if path.suffix.lower() in self.exclude_extensions:
+            return True
+            
+        return False
 
     def discover_files(self, root_path: str, extensions: List[str]) -> List[Path]:
         """Discover files with specified extensions"""
@@ -65,7 +79,7 @@ class BaseScanner(ABC):
         try:
             return self.scan_single_file(path)
         except Exception as e:
-            return {str(path): {'raw': {}, 'errors':[str(e)]}, 'score': 0}
+            return {str(path): {'raw': [], 'errors':[str(e)]}, 'score': 0}
     
     def scan(self, path: str):
         """Main scanning method"""

@@ -333,7 +333,11 @@ async function cloneRepo(req, res) {
       exec(`git clone ${repoUrl} ${tempDir.name}`, (error, stdout, stderr) => {
         if (error) {
           reject(
-            new RepoError(`Failed to clone repository: ${error.message}`, 500, "REPO_CLONE_ERROR")
+            new RepoError(
+              `Failed to clone repository: ${error.message}`,
+              500,
+              "REPO_CLONE_ERROR"
+            )
           );
         } else {
           resolve(stdout);
@@ -356,8 +360,6 @@ async function cloneRepo(req, res) {
       // Fallback to system python if venv doesn't exist
       pythonCommand = `python3 ${orchestratorPath}`;
     }
-
-    console.log("pythonCommand: ", pythonCommand);
 
     const scanProcess = spawn(
       `${pythonCommand} --scan_id=${scanData.id} --scan_path=${tempDir.name}`,
@@ -496,10 +498,40 @@ async function fetchRepoInfo(req, res) {
   }
 }
 
+async function fetchScannerResults(req, res) {
+  const { repoId, filePath } = req.body;
+
+  try {
+    const supabase = getSupabaseClient();
+
+    const { data: scanData, error: scanError } = await supabase
+      .from("file_snapshots")
+      .select("scannerResults")
+      .eq("repoSnapshotId", repoId)
+      .eq("filePath", filePath)
+      .single();
+
+    if (scanError) {
+      throw new RepoError(
+        "Failed to fetch scan data",
+        500,
+        "SCAN_DATA_FETCH_ERROR"
+      );
+    }
+
+    return res.status(200).json({
+      scanResults: scanData?.scannerResults || null,
+    });
+  } catch (error) {
+    return handleError(error, res);
+  }
+}
+
 export default {
   checkInstallation,
   fetchNewRepos,
   cloneRepo,
   fetchRepos,
   fetchRepoInfo,
+  fetchScannerResults,
 };
