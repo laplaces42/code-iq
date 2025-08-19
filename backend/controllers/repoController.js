@@ -333,11 +333,7 @@ async function cloneRepo(req, res) {
       exec(`git clone ${repoUrl} ${tempDir.name}`, (error, stdout, stderr) => {
         if (error) {
           reject(
-            new RepoError(
-              `Failed to clone repository: ${error.message}`,
-              500,
-              "REPO_CLONE_ERROR"
-            )
+            new RepoError(`Failed to clone repository: ${error.message}`, 500, "REPO_CLONE_ERROR")
           );
         } else {
           resolve(stdout);
@@ -345,28 +341,33 @@ async function cloneRepo(req, res) {
       });
     });
 
-    const dockerArgs = [
-      "run",
-      "--rm",
-      "-v",
-      `${tempDir.name}:/scan-workspace`,
-      "-e",
-      `DB_URL=${process.env.DB_URL}`,
-      "-e",
-      `DB_KEY=${process.env.DB_KEY}`,
-      "-e",
-      `BACKEND_URL=http://host.docker.internal:3000`,
-      "code-iq-scanners:latest",
-      `--scan_id=${scanData.id}`,
-      "--scan_path=/scan-workspace",
-    ];
+    // Use relative paths from the backend directory
+    const backendDir = process.cwd();
+    const scannersDir = path.join(backendDir, "scanners");
+    const venvPath = path.join(scannersDir, ".venv", "bin", "activate");
+    const orchestratorPath = path.join(scannersDir, "orchestrator.py");
 
+    // Check if virtual environment exists, if not use system python
+    let pythonCommand;
+    try {
+      await fs.access(venvPath);
+      pythonCommand = `source ${venvPath} && python3 ${orchestratorPath}`;
+    } catch {
+      // Fallback to system python if venv doesn't exist
+      pythonCommand = `python3 ${orchestratorPath}`;
+    }
 
-    const scanProcess = spawn("docker", dockerArgs, {
-      shell: true,
-      detached: true, // This detaches the process from the parent
-      stdio: ["ignore", "pipe", "pipe"], // Capture stdout and stderr for logging
-    });
+    console.log("pythonCommand: ", pythonCommand);
+
+    const scanProcess = spawn(
+      `${pythonCommand} --scan_id=${scanData.id} --scan_path=${tempDir.name}`,
+      [],
+      {
+        shell: true,
+        detached: true, // This detaches the process from the parent
+        stdio: ["ignore", "pipe", "pipe"], // Capture stdout and stderr for logging
+      }
+    );
 
     scanProcess.stdout?.on("data", (data) => {
       console.log(`Scanner stdout: ${data}`);
