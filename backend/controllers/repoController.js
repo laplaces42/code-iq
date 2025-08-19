@@ -332,7 +332,7 @@ async function cloneRepo(req, res) {
       exec(`git clone ${repoUrl} ${tempDir.name}`, (error, stdout, stderr) => {
         if (error) {
           reject(
-            new RepoError("Failed to clone repository", 500, "REPO_CLONE_ERROR")
+            new RepoError(`Failed to clone repository: ${error.message}`, 500, "REPO_CLONE_ERROR")
           );
         } else {
           resolve(stdout);
