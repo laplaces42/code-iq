@@ -24,7 +24,7 @@ class Secrets(BaseScanner):
         scanner_name = self.__class__.__name__
 
         files = self.discover_files(path, self.get_file_extensions())
-        cmd = ["trufflehog", "filesystem", "--json", path]
+        cmd = ["trufflehog3", "filesystem", "--json", path]
         results = {}
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
@@ -71,7 +71,7 @@ class Secrets(BaseScanner):
         results = {}
         for i in range(0, len(file_paths), batch_size):
             batch = file_paths[i:i + batch_size]
-            cmd = ["trufflehog", "filesystem", "--json", *[str(p) for p in batch]]
+            cmd = ["trufflehog3", "filesystem", "--json", *[str(p) for p in batch]]
 
             try:
                 proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
