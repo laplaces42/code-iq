@@ -13,6 +13,7 @@ class ScanError extends Error {
 }
 
 function handleError(error, res) {
+  console.error(error);
   if (error instanceof ScanError) {
     return res.status(error.statusCode).json({
       error: error.message,

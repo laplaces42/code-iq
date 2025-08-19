@@ -12,6 +12,7 @@ class AuthError extends Error {
 }
 
 function handleError(error, res) {
+  console.error(error);
   if (error instanceof AuthError) {
     return res.status(error.statusCode).json({
       error: error.message,
