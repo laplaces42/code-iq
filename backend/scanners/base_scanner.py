@@ -69,11 +69,8 @@ class BaseScanner(ABC):
     
     def scan(self, path: str):
         """Main scanning method"""
-        scanner_name = self.__class__.__name__
-
         # os.makedirs(os.path.dirname(f'./out/{scanner_name.lower()}.json'), exist_ok=True)
 
-        print(f"Starting {scanner_name} scan of: {path}")
         
         # Discover relevant files
         extensions = self.get_file_extensions()

@@ -325,7 +325,7 @@ async function cloneRepo(req, res) {
     });
 
     // Build authenticated clone URL for private repos
-    const repoUrl = `https://${accessToken}@github.com/${repoName}.git`;
+    const repoUrl = `https://github.com/${repoName}.git`;
 
     // Use Promise wrapper for exec
     await new Promise((resolve, reject) => {
@@ -364,16 +364,16 @@ async function cloneRepo(req, res) {
       {
         shell: true,
         detached: true, // This detaches the process from the parent
-        stdio: ["ignore", "pipe", "pipe"], // Capture stderr for logging
+        stdio: ["ignore", "pipe", "pipe"], // Capture stdout and stderr for logging
       }
     );
 
-    scanProcess.stdout?.on('data', (data) => {
+    scanProcess.stdout?.on("data", (data) => {
       console.log(`Scanner stdout: ${data}`);
     });
 
     // Handle stderr output from the scanner
-    scanProcess.stderr?.on('data', (data) => {
+    scanProcess.stderr?.on("data", (data) => {
       console.error(`Scanner stderr: ${data}`);
     });
 

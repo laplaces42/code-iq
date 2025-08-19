@@ -38,7 +38,6 @@ function getSupabaseClient() {
 
 async function startScan(req, res) {
   try {
-
     return res.status(202).json({ status: "scan started successfully" });
   } catch (error) {
     try {

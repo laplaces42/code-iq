@@ -23,14 +23,12 @@ class Secrets(BaseScanner):
         # raise Exception("Test error in secrets scanner")
         scanner_name = self.__class__.__name__
 
-        print(f"Starting {scanner_name} scan of: {path}")
         files = self.discover_files(path, self.get_file_extensions())
         cmd = ["trufflehog", "filesystem", "--json", path]
         results = {}
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
         except subprocess.TimeoutExpired:
-            print("trufflehog timeout (10 min)")
             for path in files:
                 results[str(path)] = {
                     'raw': "",

@@ -42,7 +42,6 @@ class Linter(BaseScanner):
                 return result
             
             lint_result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
-            print(f"Linting {file_path} with command: {' '.join(cmd)}")
             
             if lint_result.stdout:
                 result[str(file_path)]['raw'] = lint_result.stdout
