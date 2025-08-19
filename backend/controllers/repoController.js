@@ -356,17 +356,29 @@ async function cloneRepo(req, res) {
       pythonCommand = `python3 ${orchestratorPath}`;
     }
 
+    console.log("pythonCommand: ", pythonCommand);
+
     const scanProcess = spawn(
       `${pythonCommand} --scan_id=${scanData.id} --scan_path=${tempDir.name}`,
       [],
       {
         shell: true,
         detached: true, // This detaches the process from the parent
-        stdio: "ignore", // Ignore stdio to fully detach
+        stdio: ["ignore", "pipe", "pipe"], // Capture stderr for logging
       }
     );
 
+    scanProcess.stdout?.on('data', (data) => {
+      console.log(`Scanner stdout: ${data}`);
+    });
+
+    // Handle stderr output from the scanner
+    scanProcess.stderr?.on('data', (data) => {
+      console.error(`Scanner stderr: ${data}`);
+    });
+
     scanProcess.on("error", async (error) => {
+      console.error("Scan process error:", error);
       await supabase
         .from("active_scans")
         .update({ status: "failed", error: error.message })
