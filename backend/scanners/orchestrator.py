@@ -275,7 +275,12 @@ class ScanOrchestrator:
 
         previous_scores = self.supabase.table("repo_snapshots").select("healthScore, securityScore, knowledgeScore").eq("id", repo_id).single().execute().data
 
-        prev_overall = (previous_scores.get("healthScore", 0.0) + previous_scores.get("securityScore", 0.0) + previous_scores.get("knowledgeScore", 0.0)) / 3 if previous_scores else 0.0
+        # Handle None values from database
+        prev_health = previous_scores.get("healthScore") or 0.0
+        prev_security = previous_scores.get("securityScore") or 0.0  
+        prev_knowledge = previous_scores.get("knowledgeScore") or 0.0
+        
+        prev_overall = (prev_health + prev_security + prev_knowledge) / 3 if previous_scores else 0.0
         self.supabase.table("repo_snapshots").update({
             "healthScore": health_avg,
             "securityScore": security_avg,
