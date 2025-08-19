@@ -26,7 +26,7 @@ function HomePage() {
     // Clear any existing errors
     setError(null);
     sessionStorage.setItem("redirect_uri", window.location.pathname);
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${process.env.REACT_APP_CLIENT_ID}&scope=read:user`;
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${process.env.REACT_APP_CLIENT_ID}&scope=repo,read:user`;
   }
 
   return (

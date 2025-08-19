@@ -11,7 +11,7 @@ function MenuBar() {
 
   async function handleSignIn() {
     sessionStorage.setItem("redirect_uri", window.location.pathname);
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${process.env.REACT_APP_CLIENT_ID}&scope=read:user`;
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${process.env.REACT_APP_CLIENT_ID}&scope=repo,read:user`;
   }
 
   async function handleLogout() {
