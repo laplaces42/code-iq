@@ -479,8 +479,19 @@ async function logout(req, res) {
       // would put logging logic here
       console.error("Error deleting session:", deleteError);
     }
-    res.clearCookie("jwt");
-    res.clearCookie("refresh");
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: JWT_EXPIRATION_HOURS * 60 * 60 * 1000, // 1 hour
+    });
+
+    res.clearCookie("refresh", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: SESSION_EXPIRATION_DAYS * 24 * 60 * 60 * 1000, // 90 days
+    });
     return res.status(200).json({});
   } catch (error) {
     // Handle errors using the custom error handler
