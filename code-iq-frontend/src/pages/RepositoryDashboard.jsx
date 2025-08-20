@@ -466,9 +466,6 @@ function RepositoryDashboard() {
         {/* Header */}
         <div className={styles.header}>
           <h1 className={styles.repoName}>{repository?.name}</h1>
-          {repository?.description && (
-            <p className={styles.repoDescription}>{repository.description}</p>
-          )}
           <div className={styles.repoInfo}>
             {/* <div className={styles.repoMeta}>
               <span className={styles.repoBadge}>{repository?.name}</span>

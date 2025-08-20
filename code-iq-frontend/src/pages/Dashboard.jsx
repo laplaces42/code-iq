@@ -16,6 +16,7 @@ function Dashboard() {
   const [loadingRepos, setLoadingRepos] = useState(false);
   const [loadingInstallation, setLoadingInstallation] = useState(false);
   const [connectingRepo, setConnectingRepo] = useState(null); // Track which repo is being connected
+  const [installationId, setInstallationId] = useState(null);
 
   async function openWindowAndWait(url, windowName = "_blank", features = "") {
     return new Promise((resolve, reject) => {
@@ -60,6 +61,7 @@ function Dashboard() {
 
       if (response.ok) {
         const data = await response.json();
+        setInstallationId(data.installationId);
         return data.installationId;
       } else {
         return null;
@@ -118,6 +120,7 @@ function Dashboard() {
         // Re-check installation after window closes
         const newInstallCheck = await checkInstallation();
         if (newInstallCheck) {
+          setInstallationId(newInstallCheck);
           await fetchNewRepos(newInstallCheck);
           toast.success("GitHub App installed successfully!");
         } else {
@@ -129,6 +132,7 @@ function Dashboard() {
         setLoadingInstallation(false);
       }
     } else {
+      setInstallationId(isInstalled);
       await fetchNewRepos(isInstalled);
     }
   }
@@ -152,8 +156,51 @@ function Dashboard() {
   }
 
   async function handleSelectRepository(repository) {
-    // TODO: Implement repository connection logic
     if (repository.installed) {
+      setConnectingRepo(repository.id);
+      try {
+        const response = await fetch(
+          `${process.env.REACT_APP_BACKEND_URL}/repos/clone`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              repoName: repository.name,
+              repoId: repository.id,
+              userId: user?.id,
+            }),
+          }
+        );
+        if (response.ok) {
+          // const data = await response.json();
+          // await scanFullRepo(data.snapshotId);
+          toast.success(
+            `Repository "${repository.name}" connected successfully!`
+          );
+          // Refresh the repo list
+          fetchRepos();
+          // Optionally, refresh the repo list or show success message
+        } else {
+          toast.error(
+            `Failed to connect repository "${repository.name}". Please try again.`
+          );
+        }
+      } catch (error) {
+        toast.error(
+          `Failed to connect repository "${repository.name}". Please try again.`
+        );
+      } finally {
+        setConnectingRepo(null);
+      }
+    } else {
+      await openWindowAndWait(
+        `https://github.com/settings/installations/${installationId}`,
+        "github-install",
+        "width=600,height=700,scrollbars=yes,resizable=yes"
+      );
       setConnectingRepo(repository.id);
       try {
         const response = await fetch(

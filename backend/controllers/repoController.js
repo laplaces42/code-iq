@@ -269,7 +269,7 @@ async function fetchNewRepos(req, res) {
     const appRepoNames = appRepos.repositories.map((repo) => repo.full_name);
 
     const reposWithInstallStatus = userRepoNames.map((repoName) => ({
-      id: appRepos.repositories.find((repo) => repo.full_name === repoName)?.id,
+      id: userRepos.find((repo) => repo.full_name === repoName)?.id,
       name: repoName,
       installed: appRepoNames.includes(repoName),
     }));

@@ -120,8 +120,8 @@ function RepositoryModal({
                         {connectingRepo === repo.id
                           ? "Connecting..."
                           : repo.installed
-                          ? "Connected"
-                          : "Available"}
+                          ? "Authorized"
+                          : "Unauthorized"}
                       </span>
                     </div>
                   </div>
@@ -146,7 +146,7 @@ function RepositoryModal({
             onClick={handleConnect}
             disabled={!selectedRepo}
           >
-            {selectedRepo?.installed ? "Manage" : "Connect"}
+            {selectedRepo?.installed ? "Connect" : "Authorize"}
           </button>
         </div>
 
