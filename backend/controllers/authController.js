@@ -479,16 +479,8 @@ async function logout(req, res) {
       // would put logging logic here
       console.error("Error deleting session:", deleteError);
     }
-    res.clearCookie("jwt", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "None",
-    });
-    res.clearCookie("refresh", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "None",
-    });
+    res.clearCookie("jwt");
+    res.clearCookie("refresh");
     return res.status(200).json({});
   } catch (error) {
     // Handle errors using the custom error handler
