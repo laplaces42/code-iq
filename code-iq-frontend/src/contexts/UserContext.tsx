@@ -7,6 +7,8 @@ interface UserContextType {
   setAuthStatus: (
     status: "authenticated" | "unauthenticated" | "loading"
   ) => void;
+  authError: string | null;
+  setAuthError: (error: string | null) => void;
 }
 
 interface User {
@@ -24,9 +26,10 @@ function UserProvider({ children }: { children: React.ReactNode }) {
   const [authStatus, setAuthStatus] = useState<
     "authenticated" | "unauthenticated" | "loading"
   >("loading");
+  const [authError, setAuthError] = useState<string | null>(null);
 
   return (
-    <UserContext.Provider value={{ user, setUser, authStatus, setAuthStatus }}>
+    <UserContext.Provider value={{ user, setUser, authStatus, setAuthStatus, authError, setAuthError }}>
       {children}
     </UserContext.Provider>
   );

@@ -6,10 +6,9 @@ import styles from "./AuthCallback.module.css";
 
 function AuthCallback() {
   const code = new URLSearchParams(window.location.search).get("code");
-  const { setUser, setAuthStatus } = useUser();
+  const { setUser, setAuthStatus, setAuthError, authError } = useUser();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     async function handleAuthCallback() {
@@ -40,9 +39,9 @@ function AuthCallback() {
           navigate(sessionStorage.getItem("redirect_uri") || "/dashboard");
         } catch (err) {
           toast.error("Sign in failed. Please try again.");
-          setError(err.message);
+          setAuthError(err.message);
           setAuthStatus("unauthenticated");
-          navigate("/?error=auth_failed");
+          navigate("/");
         } finally {
           setIsProcessing(false);
         }
@@ -51,12 +50,12 @@ function AuthCallback() {
     handleAuthCallback();
   }, [code, setUser, setAuthStatus, navigate, isProcessing]);
 
-  if (error) {
+  if (authError) {
     return (
       <div className={styles.authCallback}>
         <div className={styles.errorContainer}>
           <h2 className={styles.errorTitle}>Authentication Failed</h2>
-          <p className={styles.errorMessage}>{error}</p>
+          <p className={styles.errorMessage}>{authError}</p>
           <button className={styles.errorButton} onClick={() => navigate("/")}>
             Return to Home
           </button>

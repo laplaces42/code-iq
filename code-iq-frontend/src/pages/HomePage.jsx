@@ -1,30 +1,15 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import styles from "./HomePage.module.css";
+import { useUser } from "../contexts/UserContext.tsx";
 
 function HomePage() {
-  const navigate = useNavigate();
-  const [error, setError] = useState(null);
+  const { authError, setAuthError } = useUser();
 
-  useEffect(() => {
-    // Check for error parameters in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const errorParam = urlParams.get("error");
-
-    if (errorParam === "auth_failed") {
-      setError("Authentication failed. Please try again.");
-    } else if (errorParam === "no_code") {
-      setError("Authorization code not received. Please try again.");
-    }
-
-    // Remove auto-redirect to dashboard - let users choose to visit homepage even when logged in
-  }, [navigate]);
 
   // Remove the early return for authenticated users - let them see the homepage
 
   async function handleSignIn() {
     // Clear any existing errors
-    setError(null);
+    setAuthError(null);
     sessionStorage.setItem("redirect_uri", window.location.pathname);
     window.location.href = `https://github.com/login/oauth/authorize?client_id=${process.env.REACT_APP_CLIENT_ID}&scope=repo,read:user`;
   }
@@ -43,9 +28,9 @@ function HomePage() {
             knowledge with our AI-powered dashboard
           </p>
 
-          {error && (
+          {authError && (
             <div className={styles.errorBanner}>
-              <p>{error}</p>
+              <p>{authError}</p>
             </div>
           )}
 
