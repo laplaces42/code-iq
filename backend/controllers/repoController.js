@@ -202,6 +202,17 @@ async function fetchRepos(req, res) {
 
       if (repoInfo.ok) {
         const repoDetails = await repoInfo.json();
+
+        let overallList = []
+        if (repo.healthScore) {
+          overallList.push(repo.healthScore)
+        }
+        if (repo.securityScore) {
+          overallList.push(repo.securityScore)
+        }
+        if (repo.knowledgeScore) {
+          overallList.push(repo.knowledgeScore)
+        }
         repos.push({
           id: repo.id,
           name: repoDetails.full_name,
@@ -209,12 +220,13 @@ async function fetchRepos(req, res) {
           language: repoDetails.language,
           scores: {
             overall:
-              (repo.healthScore + repo.securityScore + repo.knowledgeScore) /
-                3 || 0.0,
-            health: repo.healthScore || 0.0,
-            security: repo.securityScore || 0.0,
-            knowledge: repo.knowledgeScore || 0.0,
-            trend: repo.trend || 0.0,
+              overallList.length > 0
+                ? overallList.reduce((a, b) => a + b, 0) / overallList.length
+                : null,
+            health: repo.healthScore || null,
+            security: repo.securityScore || null,
+            knowledge: repo.knowledgeScore || null,
+            trend: repo.trend || null,
           },
           activityStatus: "active",
         });

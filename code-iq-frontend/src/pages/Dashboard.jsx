@@ -487,7 +487,7 @@ function Dashboard() {
                       className={styles.scoreValue}
                       style={{ color: getStatusColor(repo.status) }}
                     >
-                      {repo.scores.overall.toFixed(1)}/10
+                      {repo.scores.overall ? repo.scores.overall.toFixed(1) : '--'}/10
                     </span>
                     <span
                       className={styles.trendIndicator}
@@ -505,11 +505,11 @@ function Dashboard() {
                     <div className={styles.progressBar}>
                       <div
                         className={`${styles.progressFill} ${styles.health}`}
-                        style={{ width: `${repo.scores.health * 10}%` }}
+                        style={{ width: `${repo.scores.health ? repo.scores.health * 10 : 0}%` }}
                       ></div>
                     </div>
                     <span className={styles.scoreNumber}>
-                      {repo.scores.health.toFixed(1)}
+                      {repo.scores.health ? repo.scores.health.toFixed(1) : '--'}
                     </span>
                   </div>
 
@@ -518,11 +518,11 @@ function Dashboard() {
                     <div className={styles.progressBar}>
                       <div
                         className={`${styles.progressFill} ${styles.security}`}
-                        style={{ width: `${repo.scores.security * 10}%` }}
+                        style={{ width: `${repo.scores.security ? repo.scores.security * 10 : 0}%` }}
                       ></div>
                     </div>
                     <span className={styles.scoreNumber}>
-                      {repo.scores.security.toFixed(1)}
+                      {repo.scores.security ? repo.scores.security.toFixed(1) : '--'}
                     </span>
                   </div>
 
@@ -531,11 +531,11 @@ function Dashboard() {
                     <div className={styles.progressBar}>
                       <div
                         className={`${styles.progressFill} ${styles.knowledge}`}
-                        style={{ width: `${repo.scores.knowledge * 10}%` }}
+                        style={{ width: `${repo.scores.knowledge ? repo.scores.knowledge * 10 : 0}%` }}
                       ></div>
                     </div>
                     <span className={styles.scoreNumber}>
-                      {repo.scores.knowledge.toFixed(1)}
+                      {repo.scores.knowledge ? repo.scores.knowledge.toFixed(1) : '--'}
                     </span>
                   </div>
                 </div>
