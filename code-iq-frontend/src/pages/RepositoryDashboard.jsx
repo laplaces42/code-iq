@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import TrendChart from "../components/TrendChart";
+import { generateTrendData, generateWeeklyTrendData, generateHistoricalData } from "../utils/trendData";
 import {
   BarChart3,
   FolderOpen,
@@ -20,6 +22,7 @@ import {
   Bell,
   Clock,
   FolderSync,
+  TrendingUp,
 } from "lucide-react";
 import styles from "./RepositoryDashboard.module.css";
 import ScannerResultsModal from "../components/ScannerResultsModal";
@@ -35,9 +38,13 @@ function RepositoryDashboard() {
   const [loading, setLoading] = useState(true);
 
   // View state
-  const [activeWorkspaceView, setActiveWorkspaceView] = useState("dashboard"); // 'dashboard', 'files', 'scans', 'prs', 'settings'
+  const [activeWorkspaceView, setActiveWorkspaceView] = useState("dashboard"); // 'dashboard', 'files', 'scans', 'trends', 'settings'
   const [selectedFile, setSelectedFile] = useState(null);
   const [scoreFilter, setScoreFilter] = useState("overall"); // 'overall', 'health', 'security', 'knowledge'
+
+  // Trend data state
+  const [trendPeriod, setTrendPeriod] = useState("30d"); // '30d', '12w', 'all'
+  const [trendData, setTrendData] = useState([]);
 
   // Scanner Results Modal state
   const [showScannerModal, setShowScannerModal] = useState(false);
@@ -104,6 +111,24 @@ function RepositoryDashboard() {
 
     fetchRepoInfo();
   }, [repoId]);
+
+  // Load trend data when repository or time period changes
+  useEffect(() => {
+    if (repository) {
+      let data;
+      switch (trendPeriod) {
+        case '12w':
+          data = generateWeeklyTrendData(repository.id);
+          break;
+        case 'all':
+          data = generateHistoricalData(repository.id);
+          break;
+        default: // '30d'
+          data = generateTrendData(repository.id);
+      }
+      setTrendData(data);
+    }
+  }, [repository, trendPeriod]);
 
   // Build file tree structure from flat file list
   useEffect(() => {
@@ -496,6 +521,14 @@ function RepositoryDashboard() {
               onClick={() => setActiveWorkspaceView("scans")}
             >
               <Search size={16} /> Scans
+            </button>
+            <button
+              className={`${styles.toggleBtn} ${
+                activeWorkspaceView === "trends" ? styles.active : ""
+              }`}
+              onClick={() => setActiveWorkspaceView("trends")}
+            >
+              <TrendingUp size={16} /> Trends
             </button>
             <button
               className={`${styles.toggleBtn} ${
@@ -1041,6 +1074,80 @@ function RepositoryDashboard() {
             </div>
           )}
 
+          {/* Trends View */}
+          {activeWorkspaceView === "trends" && (
+            <div className={styles.trendsView}>
+              <div className={styles.trendsHeader}>
+                <h2>Score Trends & Analytics</h2>
+                <div className={styles.trendPeriodControls}>
+                  <button
+                    className={`${styles.periodBtn} ${trendPeriod === '30d' ? styles.active : ''}`}
+                    onClick={() => setTrendPeriod('30d')}
+                  >
+                    30 Days
+                  </button>
+                  <button
+                    className={`${styles.periodBtn} ${trendPeriod === '12w' ? styles.active : ''}`}
+                    onClick={() => setTrendPeriod('12w')}
+                  >
+                    12 Weeks
+                  </button>
+                  <button
+                    className={`${styles.periodBtn} ${trendPeriod === 'all' ? styles.active : ''}`}
+                    onClick={() => setTrendPeriod('all')}
+                  >
+                    All Time
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.trendsContent}>
+                <TrendChart 
+                  data={trendData} 
+                  title="Repository Health Trends" 
+                  height={400}
+                />
+                
+                <div className={styles.trendsInsights}>
+                  <div className={styles.insightCard}>
+                    <h3>Trend Summary</h3>
+                    <div className={styles.insightStats}>
+                      <div className={styles.statItem}>
+                        <span className={styles.statLabel}>Period:</span>
+                        <span className={styles.statValue}>
+                          {trendPeriod === '30d' ? 'Last 30 Days' : 
+                           trendPeriod === '12w' ? 'Last 12 Weeks' : 'All Time'}
+                        </span>
+                      </div>
+                      <div className={styles.statItem}>
+                        <span className={styles.statLabel}>Data Points:</span>
+                        <span className={styles.statValue}>{trendData.length}</span>
+                      </div>
+                      {trendData.length > 0 && (
+                        <>
+                          <div className={styles.statItem}>
+                            <span className={styles.statLabel}>Latest Overall Score:</span>
+                            <span className={styles.statValue}>
+                              {trendData[trendData.length - 1]?.overall || 'N/A'}/10
+                            </span>
+                          </div>
+                          <div className={styles.statItem}>
+                            <span className={styles.statLabel}>Trend Direction:</span>
+                            <span className={styles.statValue}>
+                              {trendData.length > 1 && 
+                               trendData[trendData.length - 1]?.overall > trendData[0]?.overall 
+                               ? '📈 Improving' : '📉 Declining'}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Settings View */}
           {activeWorkspaceView === "settings" && (
             <div className={styles.settingsView}>
@@ -1268,7 +1375,11 @@ function RepositoryDashboard() {
                 ? `${repository?.name} Overview`
                 : activeWorkspaceView === "files"
                 ? `Files${selectedFile ? ` - ${selectedFile.filePath}` : ""}`
-                : "Scan History"}
+                : activeWorkspaceView === "trends"
+                ? `Trends - ${trendPeriod === '30d' ? '30 Days' : trendPeriod === '12w' ? '12 Weeks' : 'All Time'}`
+                : activeWorkspaceView === "scans" 
+                ? "Scan History"
+                : "Settings"}
             </span>
           </div>
         </div>
