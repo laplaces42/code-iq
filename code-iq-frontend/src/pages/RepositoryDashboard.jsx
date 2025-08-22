@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import TrendChart from "../components/TrendChart";
-import { generateTrendData, generateWeeklyTrendData, generateHistoricalData } from "../utils/trendData";
+import {
+  generateTrendData,
+  generateWeeklyTrendData,
+  generateHistoricalData,
+} from "../utils/trendData";
 import {
   BarChart3,
   FolderOpen,
@@ -117,10 +121,10 @@ function RepositoryDashboard() {
     if (repository) {
       let data;
       switch (trendPeriod) {
-        case '12w':
+        case "12w":
           data = generateWeeklyTrendData(repository.id);
           break;
-        case 'all':
+        case "all":
           data = generateHistoricalData(repository.id);
           break;
         default: // '30d'
@@ -1081,20 +1085,26 @@ function RepositoryDashboard() {
                 <h2>Score Trends & Analytics</h2>
                 <div className={styles.trendPeriodControls}>
                   <button
-                    className={`${styles.periodBtn} ${trendPeriod === '30d' ? styles.active : ''}`}
-                    onClick={() => setTrendPeriod('30d')}
+                    className={`${styles.periodBtn} ${
+                      trendPeriod === "30d" ? styles.active : ""
+                    }`}
+                    onClick={() => setTrendPeriod("30d")}
                   >
                     30 Days
                   </button>
                   <button
-                    className={`${styles.periodBtn} ${trendPeriod === '12w' ? styles.active : ''}`}
-                    onClick={() => setTrendPeriod('12w')}
+                    className={`${styles.periodBtn} ${
+                      trendPeriod === "12w" ? styles.active : ""
+                    }`}
+                    onClick={() => setTrendPeriod("12w")}
                   >
                     12 Weeks
                   </button>
                   <button
-                    className={`${styles.periodBtn} ${trendPeriod === 'all' ? styles.active : ''}`}
-                    onClick={() => setTrendPeriod('all')}
+                    className={`${styles.periodBtn} ${
+                      trendPeriod === "all" ? styles.active : ""
+                    }`}
+                    onClick={() => setTrendPeriod("all")}
                   >
                     All Time
                   </button>
@@ -1102,12 +1112,12 @@ function RepositoryDashboard() {
               </div>
 
               <div className={styles.trendsContent}>
-                <TrendChart 
-                  data={trendData} 
-                  title="Repository Health Trends" 
+                <TrendChart
+                  data={trendData}
+                  title="Repository Health Trends"
                   height={400}
                 />
-                
+
                 <div className={styles.trendsInsights}>
                   <div className={styles.insightCard}>
                     <h3>Trend Summary</h3>
@@ -1115,28 +1125,41 @@ function RepositoryDashboard() {
                       <div className={styles.statItem}>
                         <span className={styles.statLabel}>Period:</span>
                         <span className={styles.statValue}>
-                          {trendPeriod === '30d' ? 'Last 30 Days' : 
-                           trendPeriod === '12w' ? 'Last 12 Weeks' : 'All Time'}
+                          {trendPeriod === "30d"
+                            ? "Last 30 Days"
+                            : trendPeriod === "12w"
+                            ? "Last 12 Weeks"
+                            : "All Time"}
                         </span>
                       </div>
                       <div className={styles.statItem}>
                         <span className={styles.statLabel}>Data Points:</span>
-                        <span className={styles.statValue}>{trendData.length}</span>
+                        <span className={styles.statValue}>
+                          {trendData.length}
+                        </span>
                       </div>
                       {trendData.length > 0 && (
                         <>
                           <div className={styles.statItem}>
-                            <span className={styles.statLabel}>Latest Overall Score:</span>
+                            <span className={styles.statLabel}>
+                              Latest Overall Score:
+                            </span>
                             <span className={styles.statValue}>
-                              {trendData[trendData.length - 1]?.overall || 'N/A'}/10
+                              {trendData[trendData.length - 1]?.overall ||
+                                "N/A"}
+                              /10
                             </span>
                           </div>
                           <div className={styles.statItem}>
-                            <span className={styles.statLabel}>Trend Direction:</span>
+                            <span className={styles.statLabel}>
+                              Trend Direction:
+                            </span>
                             <span className={styles.statValue}>
-                              {trendData.length > 1 && 
-                               trendData[trendData.length - 1]?.overall > trendData[0]?.overall 
-                               ? '📈 Improving' : '📉 Declining'}
+                              {trendData.length > 1 &&
+                              trendData[trendData.length - 1]?.overall >
+                                trendData[0]?.overall
+                                ? "📈 Improving"
+                                : "📉 Declining"}
                             </span>
                           </div>
                         </>
@@ -1376,8 +1399,14 @@ function RepositoryDashboard() {
                 : activeWorkspaceView === "files"
                 ? `Files${selectedFile ? ` - ${selectedFile.filePath}` : ""}`
                 : activeWorkspaceView === "trends"
-                ? `Trends - ${trendPeriod === '30d' ? '30 Days' : trendPeriod === '12w' ? '12 Weeks' : 'All Time'}`
-                : activeWorkspaceView === "scans" 
+                ? `Trends - ${
+                    trendPeriod === "30d"
+                      ? "30 Days"
+                      : trendPeriod === "12w"
+                      ? "12 Weeks"
+                      : "All Time"
+                  }`
+                : activeWorkspaceView === "scans"
                 ? "Scan History"
                 : "Settings"}
             </span>
