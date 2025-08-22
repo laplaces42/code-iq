@@ -552,13 +552,13 @@ function RepositoryDashboard() {
                     <div
                       className={styles.scoreValue}
                       style={{
-                        color: getScoreColor(repository?.healthScore || 0),
+                        color: getScoreColor(repository?.healthScore),
                       }}
                     >
                       {formatScore(repository?.healthScore)}
                     </div>
                     <div className={styles.scoreLabel}>
-                      {getScoreLabel(repository?.healthScore || 0)}
+                      {getScoreLabel(repository?.healthScore)}
                     </div>
                     <div className={styles.scoreDetails}>
                       Code quality, complexity, coverage
@@ -572,13 +572,13 @@ function RepositoryDashboard() {
                     <div
                       className={styles.scoreValue}
                       style={{
-                        color: getScoreColor(repository?.securityScore || 0),
+                        color: getScoreColor(repository?.securityScore),
                       }}
                     >
                       {formatScore(repository?.securityScore)}
                     </div>
                     <div className={styles.scoreLabel}>
-                      {getScoreLabel(repository?.securityScore || 0)}
+                      {getScoreLabel(repository?.securityScore)}
                     </div>
                     <div className={styles.scoreDetails}>
                       Vulnerabilities, secrets, compliance
@@ -592,13 +592,13 @@ function RepositoryDashboard() {
                     <div
                       className={styles.scoreValue}
                       style={{
-                        color: getScoreColor(repository?.knowledgeScore || 0),
+                        color: getScoreColor(repository?.knowledgeScore),
                       }}
                     >
                       {formatScore(repository?.knowledgeScore)}
                     </div>
                     <div className={styles.scoreLabel}>
-                      {getScoreLabel(repository?.knowledgeScore || 0)}
+                      {getScoreLabel(repository?.knowledgeScore)}
                     </div>
                     <div className={styles.scoreDetails}>
                       Documentation, maintainers, bus factor
