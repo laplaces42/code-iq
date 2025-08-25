@@ -1,0 +1,31 @@
+name: Deploy Database Migrations
+
+# When should this run?
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/migrations/**"] # Only run when migrations change
+
+# What should happen?
+jobs:
+  deploy-migrations:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Get the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up Supabase CLI
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # 3. Link to your project and deploy
+      - name: Link and deploy migrations
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
