@@ -180,7 +180,7 @@ async function fetchRepos(req, res) {
     const { data: repoData, error: repoError } = await supabase
       .from("repo_snapshots")
       .select("*")
-      .eq("userId", userId);
+      .contains("userIds", [userId]);
 
     if (repoError) {
       throw new RepoError(
@@ -203,15 +203,15 @@ async function fetchRepos(req, res) {
       if (repoInfo.ok) {
         const repoDetails = await repoInfo.json();
 
-        let overallList = []
+        let overallList = [];
         if (repo.healthScore) {
-          overallList.push(repo.healthScore)
+          overallList.push(repo.healthScore);
         }
         if (repo.securityScore) {
-          overallList.push(repo.securityScore)
+          overallList.push(repo.securityScore);
         }
         if (repo.knowledgeScore) {
-          overallList.push(repo.knowledgeScore)
+          overallList.push(repo.knowledgeScore);
         }
         repos.push({
           id: repo.id,
@@ -303,7 +303,7 @@ async function cloneRepo(req, res) {
     // Insert repo snapshot first
     const { data: repoData, error: repoError } = await supabase
       .from("repo_snapshots")
-      .insert({ githubId: repoId, userId: userId })
+      .insert({ githubId: repoId, userIds: [userId] })
       .select()
       .single();
 
