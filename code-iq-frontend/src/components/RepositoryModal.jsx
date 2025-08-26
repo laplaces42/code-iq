@@ -26,32 +26,34 @@ function RepositoryModal({
     });
   }, [repositories, searchTerm]);
 
-  const handleSelectRepository = (repo) => {
-    setSelectedRepo(repo);
-  };
-
-  const handleConnect = () => {
+  function handleConnect() {
     if (selectedRepo && onSelectRepository) {
       onSelectRepository(selectedRepo);
       handleClose();
     }
-  };
+  }
 
-  const handleClose = () => {
+  function handleClose() {
     setSearchTerm("");
     setSelectedRepo(null);
     onClose();
-  };
+  }
 
-  const handleBackdropClick = (e) => {
+  function handleBackdropClick(e) {
     if (e.target === e.currentTarget) {
       handleClose();
     }
-  };
+  }
 
   if (!isOpen) return null;
+
+  // Use createPortal to render the modal on top of the DOM
   return createPortal(
-    <div className={styles.repoModalBackdrop} onClick={handleBackdropClick}>
+    <div
+      className={styles.repoModalBackdrop}
+      data-testid="repo-modal-backdrop"
+      onClick={handleBackdropClick}
+    >
       <div className={styles.repoModal}>
         {/* Header */}
         <div className={styles.repoModalHeader}>
@@ -103,9 +105,7 @@ function RepositoryModal({
                     selectedRepo?.name === repo.name ? styles.selected : ""
                   } ${connectingRepo === repo.id ? styles.connecting : ""}`}
                   onClick={() =>
-                    connectingRepo === repo.id
-                      ? null
-                      : handleSelectRepository(repo)
+                    connectingRepo === repo.id ? null : setSelectedRepo(repo)
                   }
                 >
                   <div className={styles.repoInfo}>
