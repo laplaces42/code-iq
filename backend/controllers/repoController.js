@@ -241,7 +241,7 @@ async function fetchRepos(req, res) {
 
 async function fetchNewRepos(req, res) {
   try {
-    const { installationId } = req.body;
+    const { installationId, userId } = req.body;
     const accessToken = await getAuthorization(req, res);
     const userResponse = await fetch("https://api.github.com/user/repos", {
       headers: {
@@ -286,7 +286,26 @@ async function fetchNewRepos(req, res) {
       installed: appRepoNames.includes(repoName),
     }));
 
-    return res.status(200).json({ repos: reposWithInstallStatus });
+    const { data: existingRepos, error: existingReposError } = await supabase
+      .from("repo_snapshots")
+      .select("githubId")
+      .contains("userIds", [userId]);
+
+    if (existingReposError) {
+      console.error(existingReposError);
+      throw new RepoError(
+        "Failed to fetch existing repositories",
+        500,
+        "EXISTING_REPO_FETCH_ERROR"
+      );
+    }
+
+    const existingRepoIds = existingRepos.map((repo) => repo.githubId);
+    const newRepos = reposWithInstallStatus.filter(
+      (repo) => !existingRepoIds.includes(repo.id)
+    );
+
+    return res.status(200).json({ repos: newRepos });
   } catch (error) {
     return handleError(error, res);
   }
@@ -299,6 +318,40 @@ async function cloneRepo(req, res) {
   try {
     const supabase = getSupabaseClient();
     const accessToken = await getAuthorization(req, res);
+
+    // Check if the repo already exists in the database
+    const { data: existingRepo, error: existingRepoError } = await supabase
+      .from("repo_snapshots")
+      .select("id, userIds")
+      .eq("githubId", repoId)
+      .maybeSingle();
+
+    if (existingRepoError) {
+      console.error(existingRepoError);
+      throw new RepoError(
+        "Failed to check existing repo",
+        500,
+        "EXISTING_REPO_CHECK_ERROR"
+      );
+    }
+
+    if (existingRepo) {
+      console.log([...existingRepo.userIds, userId]);
+      const { data: updateRepo, error: updateRepoError } = await supabase
+        .from("repo_snapshots")
+        .update({ userIds: [...existingRepo.userIds, userId] })
+        .eq("id", existingRepo.id);
+
+      if (updateRepoError) {
+        throw new RepoError(
+          "Failed to update existing repo",
+          500,
+          "EXISTING_REPO_UPDATE_ERROR"
+        );
+      }
+
+      return res.status(200).json({ snapshotId: existingRepo.id });
+    }
 
     // Insert repo snapshot first
     const { data: repoData, error: repoError } = await supabase

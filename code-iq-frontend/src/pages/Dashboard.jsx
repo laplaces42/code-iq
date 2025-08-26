@@ -82,7 +82,7 @@ function Dashboard() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ installationId }),
+          body: JSON.stringify({ installationId, userId: user.id }),
         }
       );
 
