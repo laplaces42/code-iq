@@ -714,21 +714,6 @@ function RepositoryDashboard() {
                 </h2>
                 <div className={styles.filesStats}>
                   <span>{fileSnapshots.length} files analyzed</span>
-                  <span>•</span>
-                  <span>
-                    Average score:{" "}
-                    {fileSnapshots.length > 0
-                      ? formatScore(
-                          fileSnapshots.reduce((acc, file) => {
-                            const score = calculateOverallScore(file);
-                            return score !== null ? acc + score : acc;
-                          }, 0) /
-                            fileSnapshots.filter(
-                              (file) => calculateOverallScore(file) !== null
-                            ).length
-                        )
-                      : "--"}
-                  </span>
                 </div>
               </div>
 
