@@ -394,12 +394,18 @@ function Dashboard() {
             <div className={styles.statCard}>
               <span className={styles.statValue}>
                 {repoList.length > 0 &&
-                  (
-                    repoList.reduce(
-                      (acc, repo) => acc + repo.scores.overall,
-                      0
-                    ) / repoList.length
-                  ).toFixed(1)}
+                  (() => {
+                    const validRepos = repoList.filter(
+                      (repo) => repo.scores && repo.scores.overall != null
+                    );
+                    if (validRepos.length === 0) return "--";
+                    const avg =
+                      validRepos.reduce(
+                        (acc, repo) => acc + repo.scores.overall,
+                        0
+                      ) / validRepos.length;
+                    return avg.toFixed(1);
+                  })()}
                 {repoList.length === 0 && "--"}
               </span>
               <span className={styles.statLabel}>Avg Score</span>
@@ -487,7 +493,10 @@ function Dashboard() {
                       className={styles.scoreValue}
                       style={{ color: getStatusColor(repo.status) }}
                     >
-                      {repo.scores.overall ? repo.scores.overall.toFixed(1) : '--'}/10
+                      {repo.scores.overall
+                        ? repo.scores.overall.toFixed(1)
+                        : "--"}
+                      /10
                     </span>
                     <span
                       className={styles.trendIndicator}
@@ -505,11 +514,17 @@ function Dashboard() {
                     <div className={styles.progressBar}>
                       <div
                         className={`${styles.progressFill} ${styles.health}`}
-                        style={{ width: `${repo.scores.health ? repo.scores.health * 10 : 0}%` }}
+                        style={{
+                          width: `${
+                            repo.scores.health ? repo.scores.health * 10 : 0
+                          }%`,
+                        }}
                       ></div>
                     </div>
                     <span className={styles.scoreNumber}>
-                      {repo.scores.health ? repo.scores.health.toFixed(1) : '--'}
+                      {repo.scores.health
+                        ? repo.scores.health.toFixed(1)
+                        : "--"}
                     </span>
                   </div>
 
@@ -518,11 +533,17 @@ function Dashboard() {
                     <div className={styles.progressBar}>
                       <div
                         className={`${styles.progressFill} ${styles.security}`}
-                        style={{ width: `${repo.scores.security ? repo.scores.security * 10 : 0}%` }}
+                        style={{
+                          width: `${
+                            repo.scores.security ? repo.scores.security * 10 : 0
+                          }%`,
+                        }}
                       ></div>
                     </div>
                     <span className={styles.scoreNumber}>
-                      {repo.scores.security ? repo.scores.security.toFixed(1) : '--'}
+                      {repo.scores.security
+                        ? repo.scores.security.toFixed(1)
+                        : "--"}
                     </span>
                   </div>
 
@@ -531,11 +552,19 @@ function Dashboard() {
                     <div className={styles.progressBar}>
                       <div
                         className={`${styles.progressFill} ${styles.knowledge}`}
-                        style={{ width: `${repo.scores.knowledge ? repo.scores.knowledge * 10 : 0}%` }}
+                        style={{
+                          width: `${
+                            repo.scores.knowledge
+                              ? repo.scores.knowledge * 10
+                              : 0
+                          }%`,
+                        }}
                       ></div>
                     </div>
                     <span className={styles.scoreNumber}>
-                      {repo.scores.knowledge ? repo.scores.knowledge.toFixed(1) : '--'}
+                      {repo.scores.knowledge
+                        ? repo.scores.knowledge.toFixed(1)
+                        : "--"}
                     </span>
                   </div>
                 </div>
