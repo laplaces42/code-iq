@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/UserContext.tsx";
-import RepositoryModal from "../components/RepositoryModal.jsx";
+import RepositoryModal from "../components/Dashboard/RepositoryModal.jsx";
+import RepositoryCard from "../components/Dashboard/RepositoryCard.jsx";
 import toast from "react-hot-toast";
 import styles from "./Dashboard.module.css";
 
@@ -143,18 +144,6 @@ function Dashboard() {
     setNewRepoList([]);
   }
 
-  async function scanFullRepo(snapshotId) {
-    // TODO: Implement repository scanning logic
-    await fetch(`${process.env.REACT_APP_BACKEND_URL}/scan/start`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ snapshotId }),
-    });
-  }
-
   async function handleSelectRepository(repository) {
     if (repository.installed) {
       setConnectingRepo(repository.id);
@@ -175,14 +164,11 @@ function Dashboard() {
           }
         );
         if (response.ok) {
-          // const data = await response.json();
-          // await scanFullRepo(data.snapshotId);
           toast.success(
             `Repository "${repository.name}" connected successfully!`
           );
           // Refresh the repo list
           fetchRepos();
-          // Optionally, refresh the repo list or show success message
         } else {
           toast.error(
             `Failed to connect repository "${repository.name}". Please try again.`
@@ -219,14 +205,11 @@ function Dashboard() {
           }
         );
         if (response.ok) {
-          // const data = await response.json();
-          // await scanFullRepo(data.snapshotId);
           toast.success(
             `Repository "${repository.name}" connected successfully!`
           );
           // Refresh the repo list
           fetchRepos();
-          // Optionally, refresh the repo list or show success message
         } else {
           toast.error(
             `Failed to connect repository "${repository.name}". Please try again.`
@@ -242,73 +225,6 @@ function Dashboard() {
     }
     setShowRepoModal(false);
   }
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "excellent":
-        return "#48bb78";
-      case "good":
-        return "#4299e1";
-      case "warning":
-        return "#ed8936";
-      case "critical":
-        return "#f56565";
-      default:
-        return "#a0aec0";
-    }
-  };
-
-  const getLanguageColor = (language) => {
-    const colors = {
-      TypeScript: "#3178c6",
-      JavaScript: "#f7df1e",
-      Python: "#3776ab",
-      Java: "#ed8b00",
-      "Node.js": "#339933",
-      "React Native": "#61dafb",
-      Go: "#00add8",
-      Rust: "#000000",
-    };
-    return colors[language] || "#a0aec0";
-  };
-
-  // const getCIStatusIcon = (status) => {
-  //   switch (status) {
-  //     case "passing":
-  //       return "✔";
-  //     case "failing":
-  //       return "✖";
-  //     case "pending":
-  //       return "◐";
-  //     default:
-  //       return "?";
-  //   }
-  // };
-
-  // const getCIStatusColor = (status) => {
-  //   switch (status) {
-  //     case "passing":
-  //       return "#48bb78";
-  //     case "failing":
-  //       return "#f56565";
-  //     case "pending":
-  //       return "#ed8936";
-  //     default:
-  //       return "#a0aec0";
-  //   }
-  // };
-
-  const getTrendIcon = (trend) => {
-    if (trend > 0) return "↗";
-    if (trend < 0) return "↘";
-    return "→";
-  };
-
-  const getTrendColor = (trend) => {
-    if (trend > 0) return "#48bb78";
-    if (trend < 0) return "#f56565";
-    return "#a0aec0";
-  };
 
   // Load repositories when user is available
   async function fetchRepos() {
@@ -348,10 +264,10 @@ function Dashboard() {
   // Show loading state while checking authentication
   if (authStatus === "loading") {
     return (
-      <div className="dashboard">
-        <div className="dashboard-container">
-          <div className="loading-state">
-            <div className="loading-spinner"></div>
+      <div className={styles.dashboard}>
+        <div className={styles.dashboardContainer}>
+          <div className={styles.loadingState}>
+            <div className={styles.loadingSpinner}></div>
             <p>Loading...</p>
           </div>
         </div>
@@ -410,228 +326,13 @@ function Dashboard() {
               </span>
               <span className={styles.statLabel}>Avg Score</span>
             </div>
-            {/* <div className={styles.statCard}>
-              <span className={styles.statValue}>
-                {repositories.reduce(
-                  (acc, repo) => acc + repo.criticalAlerts,
-                  0
-                )}
-              </span>
-              <span className={styles.statLabel}>Critical Alerts</span>
-            </div>
-            <div className={styles.statCard}>
-              <span className={styles.statValue}>
-                {
-                  repositories.filter((repo) => repo.ciStatus === "failing")
-                    .length
-                }
-              </span>
-              <span className={styles.statLabel}>Failing Builds</span>
-            </div> */}
           </div>
         </div>
 
         {/* Repository Grid */}
         <div className={styles.repositoriesGrid}>
           {repoList.map((repo) => (
-            <div key={repo.id} className={styles.repositoryCard}>
-              <div className={styles.repoHeader}>
-                <div className={styles.repoInfo}>
-                  <h3 className={styles.repoName}>{repo.name}</h3>
-                  <p className={styles.repoDescription}>{repo.description}</p>
-                </div>
-                <div className={styles.repoMeta}>
-                  {/* <span
-                    className={styles.languageTag}
-                    style={{ backgroundColor: getLanguageColor(repo.language) }}
-                  >
-                    {repo.language}
-                  </span> */}
-                  {/* <div
-                    className={styles.statusIndicator}
-                    style={{ backgroundColor: getStatusColor(repo.status) }}
-                  ></div> */}
-                </div>
-              </div>
-
-              {/* <div className={styles.repoStats}>
-                <div className={styles.repoInfoRow}>
-                  <div className={styles.ciStatus}>
-                    <span
-                      className={styles.ciIcon}
-                      style={{ color: getCIStatusColor(repo.ciStatus) }}
-                    >
-                      {getCIStatusIcon(repo.ciStatus)}
-                    </span>
-                    <span className={styles.ciText}>CI {repo.ciStatus}</span>
-                  </div>
-                  <div className={styles.lastCommit}>
-                    <span className={styles.commitTime}>
-                      {repo.lastCommit.timestamp}
-                    </span>
-                    <span className={styles.commitAuthor}>
-                      by {repo.lastCommit.author}
-                    </span>
-                  </div>
-                </div>
-
-                {repo.criticalAlerts > 0 && (
-                  <div className={styles.criticalAlerts}>
-                    <span className={styles.alertIcon}>🛡️</span>
-                    <span className={styles.alertCount}>
-                      {repo.criticalAlerts} critical alerts
-                    </span>
-                  </div>
-                )}
-              </div> */}
-
-              <div className={styles.scoreSection}>
-                <div className={styles.overallScore}>
-                  <span className={styles.scoreLabel}>Overall Score</span>
-                  <div className={styles.scoreWithTrend}>
-                    <span
-                      className={styles.scoreValue}
-                      style={{ color: getStatusColor(repo.status) }}
-                    >
-                      {repo.scores.overall
-                        ? repo.scores.overall.toFixed(1)
-                        : "--"}
-                      /10
-                    </span>
-                    <span
-                      className={styles.trendIndicator}
-                      style={{ color: getTrendColor(repo.scores.trend) }}
-                    >
-                      {getTrendIcon(repo.scores.trend)}{" "}
-                      {Math.abs(repo.scores.trend).toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className={styles.detailedScores}>
-                  <div className={styles.scoreBar}>
-                    <span className={styles.scoreName}>Health</span>
-                    <div className={styles.progressBar}>
-                      <div
-                        className={`${styles.progressFill} ${styles.health}`}
-                        style={{
-                          width: `${
-                            repo.scores.health ? repo.scores.health * 10 : 0
-                          }%`,
-                        }}
-                      ></div>
-                    </div>
-                    <span className={styles.scoreNumber}>
-                      {repo.scores.health
-                        ? repo.scores.health.toFixed(1)
-                        : "--"}
-                    </span>
-                  </div>
-
-                  <div className={styles.scoreBar}>
-                    <span className={styles.scoreName}>Security</span>
-                    <div className={styles.progressBar}>
-                      <div
-                        className={`${styles.progressFill} ${styles.security}`}
-                        style={{
-                          width: `${
-                            repo.scores.security ? repo.scores.security * 10 : 0
-                          }%`,
-                        }}
-                      ></div>
-                    </div>
-                    <span className={styles.scoreNumber}>
-                      {repo.scores.security
-                        ? repo.scores.security.toFixed(1)
-                        : "--"}
-                    </span>
-                  </div>
-
-                  <div className={styles.scoreBar}>
-                    <span className={styles.scoreName}>Knowledge</span>
-                    <div className={styles.progressBar}>
-                      <div
-                        className={`${styles.progressFill} ${styles.knowledge}`}
-                        style={{
-                          width: `${
-                            repo.scores.knowledge
-                              ? repo.scores.knowledge * 10
-                              : 0
-                          }%`,
-                        }}
-                      ></div>
-                    </div>
-                    <span className={styles.scoreNumber}>
-                      {repo.scores.knowledge
-                        ? repo.scores.knowledge.toFixed(1)
-                        : "--"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.repoFooter}>
-                <div className={styles.repoActions}>
-                  <button
-                    className={styles.actionBtnPrimary}
-                    onClick={() => navigate(`/repositories/${repo.id}`)}
-                  >
-                    View Details
-                  </button>
-                  <button
-                    className={styles.actionBtnSecondary}
-                    title="Open in GitHub"
-                    onClick={() =>
-                      window.open(`https://github.com/${repo.name}`)
-                    }
-                  >
-                    <svg
-                      className={styles.githubIcon}
-                      viewBox="0 0 16 16"
-                      fill="currentColor"
-                    >
-                      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-                    </svg>
-                  </button>
-                  <button
-                    className={styles.actionBtnSecondary}
-                    title="Re-scan now"
-                  >
-                    <svg
-                      className={styles.refreshIcon}
-                      viewBox="0 0 16 16"
-                      fill="currentColor"
-                    >
-                      <path d="M8 3a5 5 0 104.546 2.914.5.5 0 00-.908-.417A4 4 0 118 4v1z" />
-                      <path d="M8 4.466V.534a.25.25 0 01.41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 018 4.466z" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className={styles.repoMetadata}>
-                  <div className={styles.activityBadge}>
-                    <span
-                      className={
-                        styles[
-                          `activityStatus${
-                            repo.activityStatus.charAt(0).toUpperCase() +
-                            repo.activityStatus.slice(1)
-                          }`
-                        ]
-                      }
-                    >
-                      {repo.activityStatus}
-                    </span>
-                  </div>
-                  <span
-                    className={styles.languageTag}
-                    style={{ backgroundColor: getLanguageColor(repo.language) }}
-                  >
-                    {repo.language}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <RepositoryCard repo={repo} />
           ))}
         </div>
 

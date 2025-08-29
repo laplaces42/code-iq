@@ -1,5 +1,5 @@
-import RepositoryModal from "../../components/RepositoryModal";
-import { UserProvider } from "../../contexts/UserContext.tsx";
+import RepositoryModal from "../../../components/Dashboard/RepositoryModal.jsx";
+import { UserProvider } from "../../../contexts/UserContext.tsx";
 import { render, screen } from "@testing-library/react";
 import { act } from "react";
 import { MemoryRouter } from "react-router-dom";
