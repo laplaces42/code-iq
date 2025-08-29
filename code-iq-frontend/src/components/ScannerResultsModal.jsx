@@ -1,7 +1,6 @@
 import { Cpu, Shield, BookOpen, Bug } from "lucide-react";
 import styles from "./ScannerResultsModal.module.css";
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function ScannerResultsModal({
   isOpen,
@@ -13,6 +12,8 @@ function ScannerResultsModal({
 }) {
   const [scannerResults, setScannerResults] = useState(null);
   const [loading, setLoading] = useState(false);
+  // Collapsed state for each scanner section: { [scannerName]: boolean }
+  const [collapsed, setCollapsed] = useState({});
 
   useEffect(() => {
     if (isOpen && selectedFile) {
@@ -21,6 +22,8 @@ function ScannerResultsModal({
         try {
           const results = await fetchScannerResults();
           setScannerResults(results);
+          // Reset collapsed state when new results are loaded
+          setCollapsed({});
         } catch (error) {
           console.error("Failed to fetch scanner results:", error);
           setScannerResults(null);
@@ -32,6 +35,11 @@ function ScannerResultsModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]); // Only depend on isOpen, fetch when modal opens
+
+  // Toggle collapse for a scanner section
+  const toggleCollapse = (scannerKey) => {
+    setCollapsed((prev) => ({ ...prev, [scannerKey]: !prev[scannerKey] }));
+  };
 
   if (!isOpen) return null;
 
@@ -130,82 +138,119 @@ function ScannerResultsModal({
                 <div>
                   {scannerResults.health?.scanners ? (
                     Object.entries(scannerResults.health.scanners).map(
-                      ([scannerName, scannerData]) => (
-                        <div
-                          key={scannerName}
-                          className={styles.scannerSection}
-                        >
-                          <div className={styles.scannerHeader}>
-                            <div className={styles.scannerTitle}>
-                              <Bug size={16} />
-                              <span>{scannerName}</span>
-                              <span className={styles.issueCount}>
-                                {scannerData.raw?.length || 0} issues
-                              </span>
-                            </div>
-                            <div className={styles.scannerScore}>
-                              Score: {scannerData.score}/100
-                            </div>
-                          </div>
-                          <div className={styles.issuesList}>
-                            {scannerData.raw?.map((issue, index) => {
-                              // Parse linter output format: "line:col: [code]: message"
-                              const match = issue.match(
-                                /^(\d+):(\d+)?: \[([^\]]+)\]: (.+)$/
-                              );
-                              if (match) {
-                                const [, lineNum, , code, message] = match;
-                                const severity = code.startsWith("E")
-                                  ? "high"
-                                  : code.startsWith("W")
-                                  ? "medium"
-                                  : "low";
-                                return (
-                                  <div
-                                    key={index}
-                                    className={styles.issueItem}
-                                    data-severity={severity}
-                                  >
-                                    <div className={styles.issueHeader}>
-                                      <span className={styles.issueType}>
-                                        {code}
-                                      </span>
-                                      <span className={styles.lineNumber}>
-                                        Line {lineNum}
-                                      </span>
-                                      <span className={styles.severity}>
-                                        {severity.charAt(0).toUpperCase() +
-                                          severity.slice(1)}
-                                      </span>
-                                    </div>
-                                    <div className={styles.issueMessage}>
-                                      {message}
-                                    </div>
-                                  </div>
-                                );
-                              }
-                              // Fallback for other formats
-                              return (
-                                <div
-                                  key={index}
-                                  className={styles.issueItem}
-                                  data-severity="medium"
+                      ([scannerName, scannerData]) => {
+                        const isCollapsed = collapsed[`health-${scannerName}`];
+                        return (
+                          <div
+                            key={scannerName}
+                            className={styles.scannerSection}
+                          >
+                            <div className={styles.scannerHeader}>
+                              <button
+                                className={styles.collapseButton}
+                                onClick={() =>
+                                  toggleCollapse(`health-${scannerName}`)
+                                }
+                                aria-label={isCollapsed ? "Expand" : "Collapse"}
+                                aria-expanded={!isCollapsed}
+                              >
+                                <span
+                                  className={
+                                    isCollapsed
+                                      ? styles.chevron + " " + styles.collapsed
+                                      : styles.chevron
+                                  }
                                 >
-                                  <div className={styles.issueMessage}>
-                                    {issue}
+                                  <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 16 16"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M4.5 6L8 9.5L11.5 6"
+                                      stroke="currentColor"
+                                      strokeWidth="1.5"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                </span>
+                              </button>
+                              <div className={styles.scannerTitle}>
+                                <Bug size={16} />
+                                <span>{scannerName}</span>
+                                <span className={styles.issueCount}>
+                                  {scannerData.raw?.length || 0} issues
+                                </span>
+                              </div>
+                              <div className={styles.scannerScore}>
+                                Score: {scannerData.score}/100
+                              </div>
+                            </div>
+                            {!isCollapsed && (
+                              <div className={styles.issuesList}>
+                                {scannerData.raw?.map((issue, index) => {
+                                  // Parse linter output format: "line:col: [code]: message"
+                                  const match = issue.match(
+                                    /^(\d+):(\d+)?: \[([^\]]+)\]: (.+)$/
+                                  );
+                                  if (match) {
+                                    const [, lineNum, , code, message] = match;
+                                    const severity = code.startsWith("E")
+                                      ? "high"
+                                      : code.startsWith("W")
+                                      ? "medium"
+                                      : "low";
+                                    return (
+                                      <div
+                                        key={index}
+                                        className={styles.issueItem}
+                                        data-severity={severity}
+                                      >
+                                        <div className={styles.issueHeader}>
+                                          <span className={styles.issueType}>
+                                            {code}
+                                          </span>
+                                          <span className={styles.lineNumber}>
+                                            Line {lineNum}
+                                          </span>
+                                          <span className={styles.severity}>
+                                            {severity.charAt(0).toUpperCase() +
+                                              severity.slice(1)}
+                                          </span>
+                                        </div>
+                                        <div className={styles.issueMessage}>
+                                          {message}
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  // Fallback for other formats
+                                  return (
+                                    <div
+                                      key={index}
+                                      className={styles.issueItem}
+                                      data-severity="medium"
+                                    >
+                                      <div className={styles.issueMessage}>
+                                        {issue}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                                {(!scannerData.raw ||
+                                  scannerData.raw.length === 0) && (
+                                  <div className={styles.noIssues}>
+                                    <p>No issues found by {scannerName}!</p>
                                   </div>
-                                </div>
-                              );
-                            })}
-                            {(!scannerData.raw ||
-                              scannerData.raw.length === 0) && (
-                              <div className={styles.noIssues}>
-                                <p>No issues found by {scannerName}!</p>
+                                )}
                               </div>
                             )}
                           </div>
-                        </div>
-                      )
+                        );
+                      }
                     )
                   ) : (
                     <div className={styles.noData}>
@@ -220,54 +265,92 @@ function ScannerResultsModal({
                 <div>
                   {scannerResults.security?.scanners ? (
                     Object.entries(scannerResults.security.scanners).map(
-                      ([scannerName, scannerData]) => (
-                        <div
-                          key={scannerName}
-                          className={styles.scannerSection}
-                        >
-                          <div className={styles.scannerHeader}>
-                            <div className={styles.scannerTitle}>
-                              <Shield size={16} />
-                              <span>{scannerName}</span>
-                              <span className={styles.issueCount}>
-                                {scannerData.raw?.length || 0} issues
-                              </span>
-                            </div>
-                            <div className={styles.scannerScore}>
-                              Score: {scannerData.score}/100
-                            </div>
-                          </div>
-                          <div className={styles.issuesList}>
-                            {scannerData.raw?.map((issue, index) => (
-                              <div
-                                key={index}
-                                className={styles.issueItem}
-                                data-severity="critical"
+                      ([scannerName, scannerData]) => {
+                        const isCollapsed =
+                          collapsed[`security-${scannerName}`];
+                        return (
+                          <div
+                            key={scannerName}
+                            className={styles.scannerSection}
+                          >
+                            <div className={styles.scannerHeader}>
+                              <button
+                                className={styles.collapseButton}
+                                onClick={() =>
+                                  toggleCollapse(`security-${scannerName}`)
+                                }
+                                aria-label={isCollapsed ? "Expand" : "Collapse"}
+                                aria-expanded={!isCollapsed}
                               >
-                                <div className={styles.issueHeader}>
-                                  <span className={styles.issueType}>
-                                    Security Issue
-                                  </span>
-                                  <span className={styles.severity}>
-                                    Critical
-                                  </span>
-                                </div>
-                                <div className={styles.issueMessage}>
-                                  {issue}
-                                </div>
+                                <span
+                                  className={
+                                    isCollapsed
+                                      ? styles.chevron + " " + styles.collapsed
+                                      : styles.chevron
+                                  }
+                                >
+                                  <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 16 16"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M4.5 6L8 9.5L11.5 6"
+                                      stroke="currentColor"
+                                      strokeWidth="1.5"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                </span>
+                              </button>
+                              <div className={styles.scannerTitle}>
+                                <Shield size={16} />
+                                <span>{scannerName}</span>
+                                <span className={styles.issueCount}>
+                                  {scannerData.raw?.length || 0} issues
+                                </span>
                               </div>
-                            ))}
-                            {(!scannerData.raw ||
-                              scannerData.raw.length === 0) && (
-                              <div className={styles.noIssues}>
-                                <p>
-                                  No security issues found by {scannerName}!
-                                </p>
+                              <div className={styles.scannerScore}>
+                                Score: {scannerData.score}/100
+                              </div>
+                            </div>
+                            {!isCollapsed && (
+                              <div className={styles.issuesList}>
+                                {scannerData.raw?.map((issue, index) => (
+                                  <div
+                                    key={index}
+                                    className={styles.issueItem}
+                                    data-severity="critical"
+                                  >
+                                    <div className={styles.issueHeader}>
+                                      <span className={styles.issueType}>
+                                        Security Issue
+                                      </span>
+                                      <span className={styles.severity}>
+                                        Critical
+                                      </span>
+                                    </div>
+                                    <div className={styles.issueMessage}>
+                                      {issue}
+                                    </div>
+                                  </div>
+                                ))}
+                                {(!scannerData.raw ||
+                                  scannerData.raw.length === 0) && (
+                                  <div className={styles.noIssues}>
+                                    <p>
+                                      No security issues found by {scannerName}!
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
-                        </div>
-                      )
+                        );
+                      }
                     )
                   ) : (
                     <div className={styles.noData}>
@@ -282,83 +365,123 @@ function ScannerResultsModal({
                 <div>
                   {scannerResults.knowledge?.scanners ? (
                     Object.entries(scannerResults.knowledge.scanners).map(
-                      ([scannerName, scannerData]) => (
-                        <div
-                          key={scannerName}
-                          className={styles.scannerSection}
-                        >
-                          <div className={styles.scannerHeader}>
-                            <div className={styles.scannerTitle}>
-                              <BookOpen size={16} />
-                              <span>{scannerName}</span>
-                              <span className={styles.issueCount}>
-                                {scannerData.raw?.length || 0} items
-                              </span>
-                            </div>
-                            <div className={styles.scannerScore}>
-                              Score: {scannerData.score}/100
-                            </div>
-                          </div>
-                          <div className={styles.issuesList}>
-                            {scannerData.raw?.map((item, index) => {
-                              // Parse TODO format: "line:col: type: message"
-                              const match = item.match(
-                                /^(\d+):(\d+)?: (\w+): (.+)$/
-                              );
-                              if (match) {
-                                const [, lineNum, , type, message] = match;
-                                const severity =
-                                  type === "FIXME"
-                                    ? "high"
-                                    : type === "TODO"
-                                    ? "medium"
-                                    : "low";
-                                return (
-                                  <div
-                                    key={index}
-                                    className={styles.issueItem}
-                                    data-severity={severity}
-                                  >
-                                    <div className={styles.issueHeader}>
-                                      <span className={styles.issueType}>
-                                        {type}
-                                      </span>
-                                      <span className={styles.lineNumber}>
-                                        Line {lineNum}
-                                      </span>
-                                      <span className={styles.severity}>
-                                        {severity.charAt(0).toUpperCase() +
-                                          severity.slice(1)}
-                                      </span>
-                                    </div>
-                                    <div className={styles.issueMessage}>
-                                      {message}
-                                    </div>
-                                  </div>
-                                );
-                              }
-                              // Fallback for other formats
-                              return (
-                                <div
-                                  key={index}
-                                  className={styles.issueItem}
-                                  data-severity="medium"
+                      ([scannerName, scannerData]) => {
+                        const isCollapsed =
+                          collapsed[`knowledge-${scannerName}`];
+                        return (
+                          <div
+                            key={scannerName}
+                            className={styles.scannerSection}
+                          >
+                            <div className={styles.scannerHeader}>
+                              <button
+                                className={styles.collapseButton}
+                                onClick={() =>
+                                  toggleCollapse(`knowledge-${scannerName}`)
+                                }
+                                aria-label={isCollapsed ? "Expand" : "Collapse"}
+                                aria-expanded={!isCollapsed}
+                              >
+                                <span
+                                  className={
+                                    isCollapsed
+                                      ? styles.chevron + " " + styles.collapsed
+                                      : styles.chevron
+                                  }
                                 >
-                                  <div className={styles.issueMessage}>
-                                    {item}
+                                  <svg
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 16 16"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M4.5 6L8 9.5L11.5 6"
+                                      stroke="currentColor"
+                                      strokeWidth="1.5"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                </span>
+                              </button>
+                              <div className={styles.scannerTitle}>
+                                <BookOpen size={16} />
+                                <span>{scannerName}</span>
+                                <span className={styles.issueCount}>
+                                  {scannerData.raw?.length || 0} items
+                                </span>
+                              </div>
+                              <div className={styles.scannerScore}>
+                                Score: {scannerData.score}/100
+                              </div>
+                            </div>
+                            {!isCollapsed && (
+                              <div className={styles.issuesList}>
+                                {scannerData.raw?.map((item, index) => {
+                                  // Parse TODO format: "line:col: type: message"
+                                  const match = item.match(
+                                    /^(\d+):(\d+)?: (\w+): (.+)$/
+                                  );
+                                  if (match) {
+                                    const [, lineNum, , type, message] = match;
+                                    const severity =
+                                      type === "FIXME"
+                                        ? "high"
+                                        : type === "TODO"
+                                        ? "medium"
+                                        : "low";
+                                    return (
+                                      <div
+                                        key={index}
+                                        className={styles.issueItem}
+                                        data-severity={severity}
+                                      >
+                                        <div className={styles.issueHeader}>
+                                          <span className={styles.issueType}>
+                                            {type}
+                                          </span>
+                                          <span className={styles.lineNumber}>
+                                            Line {lineNum}
+                                          </span>
+                                          <span className={styles.severity}>
+                                            {severity.charAt(0).toUpperCase() +
+                                              severity.slice(1)}
+                                          </span>
+                                        </div>
+                                        <div className={styles.issueMessage}>
+                                          {message}
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  // Fallback for other formats
+                                  return (
+                                    <div
+                                      key={index}
+                                      className={styles.issueItem}
+                                      data-severity="medium"
+                                    >
+                                      <div className={styles.issueMessage}>
+                                        {item}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                                {(!scannerData.raw ||
+                                  scannerData.raw.length === 0) && (
+                                  <div className={styles.noIssues}>
+                                    <p>
+                                      No knowledge debt found by {scannerName}!
+                                    </p>
                                   </div>
-                                </div>
-                              );
-                            })}
-                            {(!scannerData.raw ||
-                              scannerData.raw.length === 0) && (
-                              <div className={styles.noIssues}>
-                                <p>No knowledge debt found by {scannerName}!</p>
+                                )}
                               </div>
                             )}
                           </div>
-                        </div>
-                      )
+                        );
+                      }
                     )
                   ) : (
                     <div className={styles.noData}>

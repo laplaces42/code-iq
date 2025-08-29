@@ -1,3 +1,32 @@
+/* Collapse/Expand button for scanner sections */
+.collapseButton {
+  background: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  margin-right: 0.5em;
+  padding: 0 0.2em;
+  display: flex;
+  align-items: center;
+  color: #888;
+  transition: color 0.2s;
+}
+.collapseButton:hover {
+  color: #222;
+}
+.chevron {
+  display: inline-block;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  vertical-align: middle;
+}
+.collapsed {
+  transform: rotate(-90deg);
+}
+.scannerHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
 /* Modal Overlay */
 .modalOverlay {
   position: fixed;
