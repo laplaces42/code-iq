@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useUser } from "../contexts/UserContext.tsx";
+import { useUser } from "../../contexts/UserContext.tsx";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import styles from "./AuthCallback.module.css";
@@ -48,6 +48,7 @@ function AuthCallback() {
       }
     }
     handleAuthCallback();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, setUser, setAuthStatus, navigate, isProcessing]);
 
   if (authError) {

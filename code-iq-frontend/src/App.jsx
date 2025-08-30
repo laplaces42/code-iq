@@ -1,7 +1,7 @@
 import styles from "./App.module.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage/HomePage.jsx";
-import AuthCallback from "./pages/AuthCallback";
+import AuthCallback from "./pages/AuthCallback/AuthCallback.jsx";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import RepositoryDashboard from "./pages/RepositoryDashboard/RepositoryDashboard.jsx";
 import InstallationComplete from "./pages/InstallationComplete";
