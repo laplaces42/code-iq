@@ -1,6 +1,6 @@
 import styles from "./App.module.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/HomePage";
+import HomePage from "./pages/HomePage/HomePage.jsx";
 import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import RepositoryDashboard from "./pages/RepositoryDashboard/RepositoryDashboard.jsx";
