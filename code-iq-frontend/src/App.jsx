@@ -2,7 +2,7 @@ import styles from "./App.module.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import AuthCallback from "./pages/AuthCallback";
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard/Dashboard";
 import RepositoryDashboard from "./pages/RepositoryDashboard";
 import InstallationComplete from "./pages/InstallationComplete";
 import MenuBar from "./components/MenuBar";

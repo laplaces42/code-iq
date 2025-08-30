@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "../contexts/UserContext.tsx";
-import RepositoryModal from "../components/Dashboard/RepositoryModal.jsx";
-import RepositoryCard from "../components/Dashboard/RepositoryCard.jsx";
+import { useUser } from "../../contexts/UserContext.tsx";
+import RepositoryModal from "./components/RepositoryModal.jsx";
+import RepositoryCard from "./components/RepositoryCard.jsx";
 import toast from "react-hot-toast";
 import styles from "./Dashboard.module.css";
+import dashboardApi from "./api/dashboardApi.js";
 
 function Dashboard() {
   const { user, authStatus } = useUser();
@@ -49,16 +50,7 @@ function Dashboard() {
 
   async function checkInstallation() {
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/repos/check-installation`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await dashboardApi.checkInstallation();
 
       if (response.ok) {
         const data = await response.json();
@@ -75,17 +67,7 @@ function Dashboard() {
 
   async function fetchNewRepos(installationId) {
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/repos/fetch-new-repos`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ installationId, userId: user.id }),
-        }
-      );
+      const response = await dashboardApi.fetchNewRepos(installationId, user);
 
       if (response.ok) {
         const data = await response.json();
@@ -148,21 +130,7 @@ function Dashboard() {
     if (repository.installed) {
       setConnectingRepo(repository.id);
       try {
-        const response = await fetch(
-          `${process.env.REACT_APP_BACKEND_URL}/repos/clone`,
-          {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              repoName: repository.name,
-              repoId: repository.id,
-              userId: user?.id,
-            }),
-          }
-        );
+        const response = await dashboardApi.cloneRepo(repository, user);
         if (response.ok) {
           toast.success(
             `Repository "${repository.name}" connected successfully!`
@@ -189,21 +157,7 @@ function Dashboard() {
       );
       setConnectingRepo(repository.id);
       try {
-        const response = await fetch(
-          `${process.env.REACT_APP_BACKEND_URL}/repos/clone`,
-          {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              repoName: repository.name,
-              repoId: repository.id,
-              userId: user?.id,
-            }),
-          }
-        );
+        const response = await dashboardApi.cloneRepo(repository, user);
         if (response.ok) {
           toast.success(
             `Repository "${repository.name}" connected successfully!`
@@ -230,17 +184,7 @@ function Dashboard() {
   async function fetchRepos() {
     if (!user?.id) return;
 
-    const response = await fetch(
-      `${process.env.REACT_APP_BACKEND_URL}/repos/fetch-repos`,
-      {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: user.id }),
-      }
-    );
+    const response = await dashboardApi.fetchRepos(user);
     if (response.ok) {
       const data = await response.json();
       setRepoList(data.repos || []);
