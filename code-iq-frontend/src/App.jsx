@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard/Dashboard";
-import RepositoryDashboard from "./pages/RepositoryDashboard";
+import RepositoryDashboard from "./pages/RepositoryDashboard/RepositoryDashboard.jsx";
 import InstallationComplete from "./pages/InstallationComplete";
 import MenuBar from "./components/MenuBar";
 import { UserProvider, useUser } from "./contexts/UserContext.tsx";
