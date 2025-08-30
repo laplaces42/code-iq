@@ -16,7 +16,6 @@ function ScannerResultsModal({
   const [collapsed, setCollapsed] = useState({});
 
   useEffect(() => {
-    console.log(selectedFile);
     if (isOpen && selectedFile) {
       async function fetchData() {
         setLoading(true);
