@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import styles from "./RepositoryDashboard.module.css";
-import ScannerResultsModal from "../../components/ScannerResultsModal";
+import ScannerResultsModal from "./components/ScannerResultsModal";
 import Chatbot from "./components/Chatbot";
 import Workspace from "./components/Workspace";
 import repositoryDashboardApi from "./api/repositoryDashboardApi";
