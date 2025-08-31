@@ -4,19 +4,11 @@ import { useNavigate } from "react-router-dom";
 function RepositoryCard({ repo }) {
   const navigate = useNavigate();
 
-  function getStatusColor(status) {
-    switch (status) {
-      case "excellent":
-        return "#48bb78";
-      case "good":
-        return "#4299e1";
-      case "warning":
-        return "#ed8936";
-      case "critical":
-        return "#f56565";
-      default:
-        return "#a0aec0";
-    }
+  function getScoreColor(score) {
+    if (score >= 8) return "#48bb78"; // excellent
+    if (score >= 6) return "#4299e1"; // good
+    if (score >= 4) return "#ed8936"; // warning
+    return "#f56565"; // critical
   }
 
   function getLanguageColor(language) {
@@ -61,7 +53,8 @@ function RepositoryCard({ repo }) {
           <div className={styles.scoreWithTrend}>
             <span
               className={styles.scoreValue}
-              style={{ color: getStatusColor(repo.status) }}
+              style={{ color: getScoreColor(repo.scores.overall) }}
+              data-testid="overall-score"
             >
               {repo.scores.overall ? repo.scores.overall.toFixed(1) : "--"}
               /10
@@ -69,6 +62,7 @@ function RepositoryCard({ repo }) {
             <span
               className={styles.trendIndicator}
               style={{ color: getTrendColor(repo.scores.trend) }}
+              data-testid="overall-trend"
             >
               {getTrendIcon(repo.scores.trend)}{" "}
               {Math.abs(repo.scores.trend).toFixed(1)}
@@ -85,9 +79,10 @@ function RepositoryCard({ repo }) {
                 style={{
                   width: `${repo.scores.health ? repo.scores.health * 10 : 0}%`,
                 }}
+                data-testid="health-progress"
               ></div>
             </div>
-            <span className={styles.scoreNumber}>
+            <span className={styles.scoreNumber} data-testid="health-score">
               {repo.scores.health ? repo.scores.health.toFixed(1) : "--"}
             </span>
           </div>
@@ -102,9 +97,10 @@ function RepositoryCard({ repo }) {
                     repo.scores.security ? repo.scores.security * 10 : 0
                   }%`,
                 }}
+                data-testid="security-progress"
               ></div>
             </div>
-            <span className={styles.scoreNumber}>
+            <span className={styles.scoreNumber} data-testid="security-score">
               {repo.scores.security ? repo.scores.security.toFixed(1) : "--"}
             </span>
           </div>
@@ -119,9 +115,10 @@ function RepositoryCard({ repo }) {
                     repo.scores.knowledge ? repo.scores.knowledge * 10 : 0
                   }%`,
                 }}
+                data-testid="knowledge-progress"
               ></div>
             </div>
-            <span className={styles.scoreNumber}>
+            <span className={styles.scoreNumber} data-testid="knowledge-score">
               {repo.scores.knowledge ? repo.scores.knowledge.toFixed(1) : "--"}
             </span>
           </div>
